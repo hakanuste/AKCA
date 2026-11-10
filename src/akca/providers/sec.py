@@ -129,15 +129,16 @@ def _select_entries(companyfacts: dict, metric: str) -> list[dict]:
     return []
 
 def _debt_total(financials: dict) -> None:
-    if financials.get("long_term_debt"):
-        return
-    components = [
-        financials.get("long_term_debt_current", []),
-        financials.get("long_term_debt_noncurrent", []),
-        financials.get("short_term_borrowings", []),
-    ]
+    # Prefer an explicit current + non-current decomposition. Do not add
+    # an aggregate long-term-debt tag to its own components.
+    component_names = (
+        "long_term_debt_current",
+        "long_term_debt_noncurrent",
+        "short_term_borrowings",
+    )
+    components = [financials.get(name, []) for name in component_names]
     values: dict[str, float] = {}
-    meta: dict[str, dict] = {}
+    metadata: dict[str, dict] = {}
     for series in components:
         for row in series:
             end = row["period_end"]
@@ -145,12 +146,14 @@ def _debt_total(financials: dict) -> None:
                 values[end] = values.get(end, 0.0) + float(row["value"])
             except (TypeError, ValueError):
                 continue
-            meta[end] = row
+            metadata[end] = row
     if values:
         financials["long_term_debt"] = [
-            {**meta[end], "value": value, "tag": "sum_of_debt_components"}
+            {**metadata[end], "value": value, "tag": "sum_of_current_noncurrent_and_short_term_debt"}
             for end, value in sorted(values.items(), reverse=True)[:5]
         ]
+    elif not financials.get("long_term_debt"):
+        financials["long_term_debt"] = []
 
 def fetch_company(ticker: str) -> dict:
     symbol = ticker.strip().upper()
