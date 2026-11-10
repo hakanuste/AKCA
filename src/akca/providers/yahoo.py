@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from math import isfinite
 from typing import Any
 
 import yfinance as yf
@@ -15,7 +15,7 @@ def _safe_float(value: Any) -> float | None:
         if value is None:
             return None
         number = float(value)
-        if number != number or number in (float("inf"), float("-inf")):
+        if not isfinite(number):
             return None
         return number
     except (TypeError, ValueError):
