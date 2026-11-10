@@ -217,11 +217,16 @@ def calculate_month(period: str, db_path=None, min_sellers: int = MIN_SELLERS) -
         "SELECT index_value FROM index_runs WHERE period=? AND status='calculated'",
         (prev_period,),
     ).fetchone()
+    rebased = status == "calculated" and (
+        not previous_run or previous_run["index_value"] is None
+    )
     index_value = (
         float(previous_run["index_value"]) * (1 + inflation / 100)
         if status == "calculated" and previous_run and previous_run["index_value"] is not None
-        else None
+        else (100 * (1 + inflation / 100) if status == "calculated" else None)
     )
+    if rebased:
+        note += f" İlk seri ayı: {prev_period}=100 baz kabul edilerek yeniden bazlandı."
     conn.execute(
         """
         INSERT OR REPLACE INTO index_runs(
@@ -236,6 +241,8 @@ def calculate_month(period: str, db_path=None, min_sellers: int = MIN_SELLERS) -
         "period": period, "previous_period": prev_period, "status": status,
         "monthly_inflation_pct": inflation, "index_value": index_value,
         "coverage_weight_pct": round(coverage_weight, 6),
+        "index_base_period": prev_period if status == "calculated" else None,
+        "index_rebased": rebased,
         "item_rows": len(item_results), "items_total": len(items),
         "incomplete_count": len(incomplete), "incomplete_examples": incomplete[:25],
         "notes": note,
