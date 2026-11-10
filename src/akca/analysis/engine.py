@@ -102,7 +102,7 @@ def _cache_get(symbol: str, ttl_minutes: int = 15):
         return None
 
 def _cache_put(symbol: str, payload: dict, source: str = "SEC+Yahoo"):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     conn = connect()
     conn.execute(
         "INSERT OR REPLACE INTO market_cache(cache_key,payload_json,source,retrieved_at,expires_at) VALUES(?,?,?,?,?)",
@@ -200,7 +200,7 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
         "symbol": symbol,
         "company_name": profile.get("name") or sec.get("company_name") or symbol,
         "market_region": "BIST" if is_bist else ("US" if sec.get("available") else "global_or_unclassified"),
-        "as_of": datetime.now(timezone.utc).isoformat(),
+        "as_of": datetime.now(UTC).isoformat(),
         "profile": profile,
         "fundamentals": fundamentals,
         "valuation": valuation,
