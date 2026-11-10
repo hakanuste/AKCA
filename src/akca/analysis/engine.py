@@ -174,12 +174,14 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
     sec = results.get("sec", {"available": False, "reason": errors.get("sec")})
     profile = market.get("profile", {"symbol": symbol, "name": symbol})
     history = market.get("price_history", [])
+    resolved_symbol = profile.get("symbol") or symbol
+    if str(resolved_symbol).endswith(".IS"):
+        sec = _sec_not_applicable(str(resolved_symbol))
     technical = analyze_price_history(history)
     fundamentals = analyze_fundamentals(sec, market)
     valuation = _valuation(profile, fundamentals)
     risk_flags = _risk_review(fundamentals, technical, profile)
     recommendation = _recommendation_gate(profile, fundamentals, technical, risk_flags)
-    resolved_symbol = profile.get("symbol") or symbol
     is_bist = str(resolved_symbol).endswith(".IS")
     warnings = list(market.get("warnings", []))
     if is_bist:
