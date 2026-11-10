@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, timezone
 from math import isfinite
 from urllib.parse import urlparse
@@ -106,7 +107,10 @@ def import_financial_facts(
         """,
         (
             retrieved_at, "local-user", "import", "financial_facts", ticker,
-            f'{{"source":"{source}","row_count":{imported},"verified_by_user":{str(bool(verified)).lower()}}}',
+            json.dumps(
+                {"source": source, "row_count": imported, "verified_by_user": bool(verified)},
+                ensure_ascii=False,
+            ),
         ),
     )
     conn.commit()
