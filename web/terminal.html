@@ -60,6 +60,8 @@
             <div><h2 id="company-name">—</h2><div id="company-meta" class="muted">—</div></div>
             <div class="action-wrap"><span class="action-label">ARAŞTIRMA AKSİYONU</span><strong id="company-action">BEKLE</strong><small id="company-confidence">—</small></div>
           </div>
+          <div class="market-controls"><button type="button" class="button-quiet" id="dollar-performance-load">USD BAZLI PERFORMANS ↗</button></div>
+          <div id="dollar-performance-results" class="panel hidden"></div>
           <div class="metrics-grid">
             <div class="metric"><span>SON KAPANIŞ</span><strong id="m-price">—</strong><small id="m-price-date">—</small></div>
             <div class="metric"><span>PİYASA DEĞERİ</span><strong id="m-cap">—</strong><small id="m-currency">—</small></div>
@@ -164,6 +166,8 @@
             <label class="wide">Kaynak URL<input id="ipo-url" type="url" required></label>
           </div><label class="check-label"><input id="ipo-verified" type="checkbox"> Resmî izahname/KAP kaynağından doğruladım</label><button class="button-primary">KAYDET</button>
         </form>
+        <div class="market-controls"><button type="button" id="ipo-list-load" class="button-quiet">SON 2 YILIN KAYITLI HALKA ARZLARI</button><span class="asof">YALNIZCA KAYDEDİLMİŞ/DOĞRULANMIŞ LİSTE</span></div>
+        <div id="ipo-list" class="panel hidden"></div>
         <form id="ipo-query-form" class="searchbar"><div class="search-field grow"><label>HALKA ARZ PERFORMANSI</label><input id="ipo-query-symbol" placeholder="Sembol"></div><button class="button-primary">İNCELE</button></form><div id="ipo-error" class="error hidden"></div><div id="ipo-results" class="panel hidden"></div>
       </section>
 
