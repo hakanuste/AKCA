@@ -42,7 +42,6 @@ def build_company_checklist(report: dict, broker_records_count: int = 0) -> list
     metrics = fundamentals.get("metrics", {})
     technical = report.get("technical", {})
     filings = report.get("filings", [])
-    completeness = report.get("completeness", {})
     price_history_ok = technical.get("observations", 0) >= 200
     sec_filings = bool(filings)
     is_bist = report.get("market_region") == "BIST"
