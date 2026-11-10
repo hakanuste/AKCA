@@ -355,6 +355,9 @@ async function health(){
   }catch(e){status.textContent="API bağlantısı yok";status.classList.add("bad");toast("Terminal arayüzü açıldı; FastAPI sunucusu çalışmıyor.");}
 }
 $("#api-key-save").addEventListener("click",()=>{});
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+}
 health();loadBasket();runCompany(false);
 if($("#broker-date")&&!$("#broker-date").value)$("#broker-date").value=new Date().toISOString().slice(0,10);
 })();
