@@ -21,11 +21,19 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Install project
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-      - name: Compile source
+      - name: Compile Python source
         run: python -m compileall -q src
+      - name: Check browser JavaScript syntax
+        run: node --check web/assets/terminal.js && node --check web/assets/app.js && node --check web/service-worker.js
+      - name: Ruff static analysis
+        run: ruff check src tests
       - name: Run tests
         run: pytest -q
