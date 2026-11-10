@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111b18">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AKÇA">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>AKÇA Research Terminal</title>
+  <link rel="stylesheet" href="assets/terminal.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><i>A</i><span>AKÇA <small>RESEARCH TERMINAL</small></span></a>
+    <div class="topbar-right">
+      <span id="connection-status" class="connection"><i></i> API bağlantısı kontrol ediliyor</span>
+      <a href="index.html" class="back-link">Tanıtım sayfası ↗</a>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="side-label">ARAŞTIRMA</div>
+      <button class="nav-item active" data-view="company">⌕ <span>Şirket analizi</span></button>
+      <button class="nav-item" data-view="screener">◫ <span>Değer tarayıcı</span></button>
+      <button class="nav-item" data-view="markets">▥ <span>BIST & dünya piyasaları</span></button>
+      <button class="nav-item" data-view="commodities">◈ <span>Emtia piyasaları</span></button>
+      <button class="nav-item" data-view="crypto">₿ <span>Kripto piyasası</span></button>
+      <button class="nav-item" data-view="macro">⌁ <span>Makro göstergeler</span></button>
+      <div class="side-label">PORTFÖY & ARAŞTIRMA</div>
+      <button class="nav-item" data-view="portfolio">▤ <span>Portföy riski</span></button>
+      <button class="nav-item" data-view="institutional">◎ <span>Kurum araştırmaları</span></button>
+      <button class="nav-item" data-view="ipo">↗ <span>Halka arzlar</span></button>
+      <div class="side-label">TÜRKİYE ÖZEL</div>
+      <button class="nav-item" data-view="inflation">◉ <span>Bağımsız fiyat endeksi</span></button>
+      <div class="sidebar-bottom">
+        <span class="version">AKÇA v0.2 ALPHA</span>
+        <span>Emir iletimi kapalı</span>
+      </div>
+    </aside>
+    <main class="main">
+      <section class="view active" id="view-company">
+        <div class="page-head">
+          <div><div class="eyebrow">01 / ŞİRKET ARAŞTIRMASI</div><h1>Şirket analizi</h1><p>Şirket sembolünü gir; finansallar, fiyat davranışı, değerleme ve riskleri tek raporda incele.</p></div>
+          <div class="asof" id="report-asof">VERİ TARİHİ —</div>
+        </div>
+        <form id="company-form" class="searchbar">
+          <div class="search-field"><label for="company-symbol">HİSSE / SEMBOL</label><input id="company-symbol" value="AEFES.IS" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Örn. AEFES.IS, GARAN.IS veya AAPL"></div>
+          <button class="button-primary" type="submit" id="analyze-button">ANALİZ ET <span>↗</span></button>
+          <button class="button-quiet" type="button" id="refresh-button">Yenile</button>
+        </form>
+        <div class="hint">Örnek semboller: AEFES.IS, GARAN.IS, THYAO.IS, AAPL, MSFT. BIST sembollerinde .IS uzantısı kullan. Fiyat verisi sağlayıcı kapsamına bağlıdır.</div>
+        <div id="company-loading" class="loading hidden">Veri sağlayıcıları sorgulanıyor; rapor hazırlanıyor…</div>
+        <div id="company-error" class="error hidden"></div>
+        <div id="company-report" class="hidden">
+          <div class="report-heading">
+            <div><h2 id="company-name">—</h2><div id="company-meta" class="muted">—</div></div>
+            <div class="action-wrap"><span class="action-label">ARAŞTIRMA AKSİYONU</span><strong id="company-action">BEKLE</strong><small id="company-confidence">—</small></div>
+          </div>
+          <div class="market-controls"><button type="button" class="button-quiet" id="dollar-performance-load">USD BAZLI PERFORMANS ↗</button></div>
+          <div id="dollar-performance-results" class="panel hidden"></div>
+          <div class="metrics-grid">
+            <div class="metric"><span>SON KAPANIŞ</span><strong id="m-price">—</strong><small id="m-price-date">—</small></div>
+            <div class="metric"><span>PİYASA DEĞERİ</span><strong id="m-cap">—</strong><small id="m-currency">—</small></div>
+            <div class="metric"><span>F/K</span><strong id="m-pe">—</strong><small>Sağlayıcı verisi</small></div>
+            <div class="metric"><span>GELİR BÜYÜMESİ</span><strong id="m-growth">—</strong><small>Son yıllık dönem</small></div>
+            <div class="metric"><span>RSI (14)</span><strong id="m-rsi">—</strong><small id="m-trend">Teknik trend —</small></div>
+          </div>
+          <article class="panel price-chart-panel">
+            <div class="panel-head"><div><small>FİYAT TARİHÇESİ</small><h3>Gerçek piyasa fiyat serisi</h3></div><span id="price-chart-period" class="status">—</span></div>
+            <div id="price-chart" class="price-chart"></div>
+          </article>
+          <div class="report-grid">
+            <article class="panel span-two"><div class="panel-head"><div><small>01 / TEMEL ANALİZ</small><h3>Finansal görünüm</h3></div><span id="fundamental-status" class="status">—</span></div><div id="financial-table" class="table-wrap"></div></article>
+            <article class="panel"><div class="panel-head"><div><small>02 / DEĞERLEME</small><h3>Çarpanlar</h3></div></div><div id="valuation-list" class="key-list"></div></article>
+            <article class="panel"><div class="panel-head"><div><small>03 / TEKNİK</small><h3>Fiyat ve trend</h3></div><span id="technical-status" class="status">—</span></div><div id="technical-list" class="key-list"></div></article>
+            <article class="panel"><div class="panel-head"><div><small>04 / RİSK</small><h3>Risk işaretleri</h3></div></div><div id="risk-list" class="risk-list"></div></article>
+            <article class="panel"><div class="panel-head"><div><small>05 / KURUMSAL ARAŞTIRMA</small><h3>Hedef fiyat konsensüsü</h3></div><button class="small-link" data-open="institutional">Kayıt ekle ↗</button></div><div id="consensus-list" class="key-list"></div></article>
+            <article class="panel span-two"><div class="panel-head"><div><small>06 / RESMÎ BİLDİRİMLER</small><h3>Son EDGAR dosyaları</h3></div></div><div id="filings-list" class="filings-list"></div></article>
+            <article class="panel span-two"><div class="panel-head"><div><small>07 / ARAŞTIRMA KAPSAMI</small><h3>33 adımlı şirket inceleme protokolü</h3></div><span id="checklist-summary" class="status">—</span></div><div id="checklist-list" class="checklist"></div></article>
+            <article class="panel span-two"><div class="panel-head"><div><small>08 / KAYNAK DENETİMİ</small><h3>Veri kaynakları ve sınırlamalar</h3></div></div><div id="sources-list" class="sources-list"></div><div id="evidence-gaps" class="gaps"></div></article>
+          </div>
+          <form id="manual-financial-form" class="panel manual-import-panel">
+            <div class="panel-head"><div><small>09 / BIST & ŞİRKET FİNANSAL BELGELERİ</small><h3>Kaynaklı finansal veri içe aktar</h3></div><span class="status">MANUEL İÇE AKTARIM</span></div>
+            <p class="muted">KAP veya şirketin resmî raporundaki finansal kalemleri JSON olarak aktar. Kaynak adresi zorunludur. “Doğruladım” işaretlenmeden kayıtlar analizde kullanılmaz. Çeyreklik kayıtlar saklanır; bu sürümün temel oranları doğrulanmış yıllık kayıtlardan hesaplanır.</p>
+            <p class="muted">metric_code seçenekleri: revenue, net_income, operating_cash_flow, capex, total_assets, total_liabilities, cash, long_term_debt, equity, operating_income, diluted_eps. Her satırda period_end (YYYY-AA-GG), period_type (annual/quarterly), value ve gerekirse currency/unit bulunmalıdır.</p>
+            <div class="form-grid-inner">
+              <label>Kaynak adı<input id="manual-source-name" value="KAP finansal bildirim" required></label>
+              <label>Kaynak URL<input id="manual-source-url" type="url" placeholder="https://kap.org.tr/..." required></label>
+            </div>
+            <label class="manual-json-label">FİNANSAL VERİ SATIRLARI — JSON
+              <textarea id="manual-financial-json" rows="7" spellcheck="false" required placeholder='[{"metric_code":"revenue","period_end":"2025-12-31","period_type":"annual","value":12345,"currency":"TRY","unit":"TRY"}]'>[]</textarea>
+            </label>
+            <label class="check-label"><input id="manual-financial-verified" type="checkbox"> Değerleri bağlantısını verdiğim resmî KAP/şirket belgesiyle karşılaştırıp doğruladım</label>
+            <button class="button-primary" type="submit">FİNANSAL VERİLERİ AKTAR</button>
+            <div id="manual-financial-message" class="muted"></div>
+          </form>
+          <div class="notice" id="report-notice">Bu rapor karar desteğidir. İlk sürümde karar eşikleri tarihsel testle kalibre edilmemiştir.</div>
+        </div>
+      </section>
+
+      <section class="view" id="view-screener">
+        <div class="page-head"><div><div class="eyebrow">02 / FIRSAT TARAMA</div><h1>Değer tarayıcı</h1><p>Şirketleri temel, değerleme ve risk ölçütleriyle yan yana incele. Bu liste tek başına AL sinyali değildir.</p></div></div>
+        <form id="screener-form" class="searchbar"><div class="search-field grow"><label for="screen-symbols">SEMBOL LİSTESİ (VİRGÜLLE AYIR)</label><input id="screen-symbols" value="AAPL,MSFT,NVDA,GOOGL,AMZN" placeholder="AAPL,MSFT,GARAN.IS"></div><button class="button-primary">TARAMA YAP ↗</button></form>
+        <div id="screener-error" class="error hidden"></div><div id="screener-loading" class="loading hidden">Semboller analiz ediliyor…</div><div id="screener-results" class="panel hidden"></div>
+        <div class="notice">Bu ilk tarayıcı kullanıcının verdiği sembol listesini inceler. Henüz tüm dünya borsalarını kapsayan eksiksiz bir evren taraması değildir.</div>
+      </section>
+
+      <section class="view" id="view-markets">
+        <div class="page-head"><div><div class="eyebrow">03 / BORSA İSTANBUL & KÜRESEL PİYASALAR</div><h1>BIST & dünya piyasaları</h1><p>BIST 100/30, ABD, Avrupa ve Asya endeksleri ile döviz piyasalarını tek ekranda izle. Veri kaynağı ve gecikme bilgisini dikkate al.</p></div></div>
+        <div class="market-controls"><button class="button-primary" id="markets-load">PİYASALARI GÜNCELLE ↗</button><span id="markets-asof" class="asof">VERİ TARİHİ —</span></div>
+        <div id="markets-error" class="error hidden"></div>
+        <div id="markets-loading" class="loading hidden">Piyasa verileri isteniyor…</div>
+        <div class="market-section"><h3>Hisse endeksleri</h3><div id="indices-grid" class="market-cards"></div></div>
+        <div class="market-section"><h3>Döviz ve dolar endeksi</h3><div id="fx-grid" class="market-cards"></div></div>
+        <div class="notice">BIST fiyatları bu ekranda yalnızca sağlayıcıdan erişilebilen gösterge/tarihsel verilerdir. Canlı veya yeniden dağıtılabilir BIST verisi için lisanslı veri sağlayıcısı bağlantısı gerekir.</div>
+      </section>
+
+      <section class="view" id="view-commodities">
+        <div class="page-head"><div><div class="eyebrow">04 / EMTİA & HAMMADDE</div><h1>Emtia piyasaları</h1><p>Altın, gümüş, bakır, petrol, doğalgaz ve tarımsal emtia vadeli işlemleri; ayrıca Dünya Bankası aylık benchmark fiyat serileri.</p></div></div>
+        <div class="market-controls"><button class="button-primary" id="commodities-live-load">VADELİ PİYASALARI GÜNCELLE ↗</button><button class="button-quiet" id="commodities-history-load">DÜNYA BANKASI AYLIK SERİLERİ</button></div>
+        <div id="commodities-error" class="error hidden"></div><div id="commodities-loading" class="loading hidden">Emtia serileri alınıyor…</div>
+        <div class="market-section"><h3>Vadeli işlem göstergeleri</h3><div id="commodities-live-grid" class="market-cards"></div></div>
+        <div class="panel hidden" id="commodities-history"><div class="panel-head"><div><small>WORLD BANK / PINK SHEET</small><h3>Aylık benchmark geçmişi (USD)</h3></div><span class="status">AYLIK VERİ</span></div><div id="commodities-history-content" class="table-wrap"></div></div>
+        <div class="notice">Futures sembolleri sürekli kontrat serileridir; vade geçişi/roll etkisi, spot fiyat ve yerel fiziki piyasa primiyle aynı şey değildir. Dünya Bankası serileri aylık benchmark niteliğindedir, gün içi fiyat değildir.</div>
+      </section>
+
+      <section class="view" id="view-crypto">
+        <div class="page-head"><div><div class="eyebrow">05 / DİJİTAL VARLIKLAR</div><h1>Kripto piyasası</h1><p>CoinGecko üzerinden varlık arama, fiyat, piyasa değeri ve dönemsel performans.</p></div></div>
+        <form id="crypto-form" class="searchbar"><div class="search-field grow"><label for="crypto-query">VARLIK / SEMBOL</label><input id="crypto-query" value="bitcoin" placeholder="Bitcoin, Ethereum…"></div><button class="button-primary">ARA ↗</button></form>
+        <div id="crypto-error" class="error hidden"></div><div id="crypto-results" class="crypto-results"></div><div id="crypto-detail" class="panel hidden"></div>
+      </section>
+
+      <section class="view" id="view-macro">
+        <div class="page-head"><div><div class="eyebrow">06 / MAKRO EKONOMİ</div><h1>Makro göstergeler</h1><p>TCMB EVDS ve ABD FRED verileri: döviz, faiz, enflasyon, tahvil, işsizlik ve makro seriler.</p></div></div>
+        <div class="market-controls"><button class="button-primary" id="macro-load">ABD MAKRO VERİLERİ ↗</button></div><div id="macro-error" class="error hidden"></div><div id="macro-results" class="metrics-grid"></div>
+        <form id="evds-form" class="searchbar"><div class="search-field grow"><label for="evds-series">TCMB EVDS SERİ KODLARI (VİRGÜLLE AYIR)</label><input id="evds-series" value="TP.DK.USD.A,TP.DK.EUR.A,TP.APIFON4,TP.BISTTLREF.KAPANIS" placeholder="EVDS3 kataloğundaki seri kodları"></div><button class="button-primary">TCMB SERİLERİNİ GETİR ↗</button></form>
+        <form id="evds-catalogue-form" class="searchbar">
+          <div class="search-field"><label for="evds-catalogue-kind">KATALOG TÜRÜ</label><select id="evds-catalogue-kind"><option value="datagroups">Veri grupları</option><option value="categories">Kategoriler</option><option value="series">Seriler (grup/seri kodu ile)</option></select></div>
+          <div class="search-field"><label for="evds-catalogue-code">GRUP / SERİ KODU</label><input id="evds-catalogue-code" placeholder="Örn. bie_tukfiy4 veya TP.DK.USD.A"></div>
+          <div class="search-field grow"><label for="evds-catalogue-query">KATALOGDA ARA</label><input id="evds-catalogue-query" placeholder="BIST, altın, gümüş, DİBS, TLREF…"></div>
+          <button class="button-primary">KATALOĞU AÇ</button>
+        </form>
+        <div id="evds-catalogue-results" class="panel hidden"></div>
+        <div id="evds-results" class="panel hidden"></div><div class="notice">EVDS 3 kataloğunda BIST endeks/hacim, altın-gümüş, TLREF/repo ve DİBS serileri bulunur. Katalog sonuçları TCMB'den gelir; seri kodlarını ve birimlerini analizden önce doğrula. FRED ve EVDS anahtarları sunucu tarafındaki .env dosyasında tutulur; tarayıcıya gönderilmez.</div>
+      </section>
+
+      <section class="view" id="view-portfolio">
+        <div class="page-head"><div><div class="eyebrow">07 / SERMAYE KORUMA</div><h1>Portföy riski</h1><p>Yerel portföy kaydı, pozisyon büyüklüğü ve piyasa değeri yoğunlaşması.</p></div></div>
+        <div class="form-grid">
+          <form id="portfolio-create-form" class="panel form-panel"><h3>Portföy oluştur</h3><label>Portföy adı<input id="portfolio-name" value="Ana Portföy" required></label><label>Referans para birimi<input id="portfolio-currency" value="TRY" maxlength="3"></label><button class="button-primary">OLUŞTUR</button></form>
+          <form id="position-form" class="panel form-panel"><h3>Pozisyon ekle</h3><label>Portföy<select id="portfolio-select" required></select></label><label>Sembol<input id="position-symbol" placeholder="GARAN.IS" required></label><label>Adet<input id="position-quantity" type="number" step="any" min="0.000001" required></label><label>Ortalama maliyet (isteğe bağlı)<input id="position-cost" type="number" step="any"></label><button class="button-primary">POZİSYON KAYDET</button></form>
+        </div>
+        <div id="portfolio-error" class="error hidden"></div><div id="portfolio-results" class="panel hidden"></div>
+      </section>
+
+      <section class="view" id="view-institutional">
+        <div class="page-head"><div><div class="eyebrow">08 / SELL-SIDE RESEARCH</div><h1>Kurum araştırmaları</h1><p>Aracı kurum raporlarını kaynak URL, yayın tarihi ve bağımlılık grubu ile kaydet; hedef fiyat isabetini zaman içinde ölç.</p></div></div>
+        <form id="broker-form" class="panel form-panel wide-form">
+          <h3>Yeni kurum raporu kaydı</h3>
+          <div class="form-grid-inner">
+            <label>Sembol<input id="broker-symbol" required placeholder="AAPL veya GARAN.IS"></label>
+            <label>Kurum<input id="broker-institution" required></label>
+            <label>Tavsiye<select id="broker-rating"><option>BUY</option><option>OUTPERFORM</option><option>HOLD</option><option>NEUTRAL</option><option>UNDERPERFORM</option><option>SELL</option></select></label>
+            <label>Hedef fiyat<input id="broker-target" type="number" step="any"></label>
+            <label>Para birimi<input id="broker-currency" maxlength="8" placeholder="TRY / USD"></label>
+            <label>Yayın tarihi<input id="broker-date" type="date" required></label>
+            <label>Yayın anı hisse fiyatı<input id="broker-reference" type="number" step="any"></label>
+            <label>Bağımlılık grubu<input id="broker-dependency" placeholder="Rapor/analist grubu"></label>
+            <label>Kaynak adı<input id="broker-source" value="Aracı kurum raporu" required></label>
+            <label>Rapor URL<input id="broker-url" type="url" required></label>
+          </div>
+          <label class="check-label"><input id="broker-verified" type="checkbox"> Kaynağı ve rapor içeriğini ben doğruladım</label>
+          <button class="button-primary">RAPORU KAYDET</button>
+        </form>
+        <div id="broker-error" class="error hidden"></div>
+        <form id="broker-consensus-form" class="searchbar"><div class="search-field grow"><label>KONSENSÜSÜ GÖRÜNTÜLE</label><input id="broker-consensus-symbol" placeholder="Sembol"></div><button class="button-primary">GETİR</button></form>
+        <div id="broker-consensus-results" class="panel hidden"></div>
+      </section>
+
+      <section class="view" id="view-ipo">
+        <div class="page-head"><div><div class="eyebrow">09 / HALKA ARZ ARAŞTIRMASI</div><h1>Halka arz takip</h1><p>Halka arz fiyatı, kaynak ve güncel fiyatı karşılaştır. TL/dolar/reel getirinin eksik kapsamını açıkça işaretle.</p></div></div>
+        <form id="ipo-form" class="panel form-panel wide-form">
+          <h3>Halka arz kaydı ekle</h3><div class="form-grid-inner">
+            <label>Sembol<input id="ipo-symbol" required placeholder="THYAO.IS"></label>
+            <label>Şirket adı<input id="ipo-company" required></label>
+            <label>Halka arz tarihi<input id="ipo-date" type="date" required></label>
+            <label>Halka arz fiyatı<input id="ipo-price" type="number" min="0.0001" step="any" required></label>
+            <label>Para birimi<input id="ipo-currency" value="TRY" maxlength="3" required></label>
+            <label>Kaynak adı<input id="ipo-source" required></label>
+            <label class="wide">Kaynak URL<input id="ipo-url" type="url" required></label>
+          </div><label class="check-label"><input id="ipo-verified" type="checkbox"> Resmî izahname/KAP kaynağından doğruladım</label><button class="button-primary">KAYDET</button>
+        </form>
+        <div class="market-controls"><button type="button" id="ipo-list-load" class="button-quiet">SON 2 YILIN KAYITLI HALKA ARZLARI</button><span class="asof">YALNIZCA KAYDEDİLMİŞ/DOĞRULANMIŞ LİSTE</span></div>
+        <div id="ipo-list" class="panel hidden"></div>
+        <form id="ipo-query-form" class="searchbar"><div class="search-field grow"><label>HALKA ARZ PERFORMANSI</label><input id="ipo-query-symbol" placeholder="Sembol"></div><button class="button-primary">İNCELE</button></form><div id="ipo-error" class="error hidden"></div><div id="ipo-results" class="panel hidden"></div>
+      </section>
+
+      <section class="view" id="view-inflation">
+        <div class="page-head"><div><div class="eyebrow">10 / DOĞRUDAN PİYASA FİYATLARI</div><h1>Bağımsız fiyat endeksi</h1><p>TÜİK 2022 sepetiyle satıcı bazlı aylık fiyat araştırması. Bu gösterge resmî TÜFE değildir.</p></div></div>
+        <div class="metrics-grid"><div class="metric"><span>REFERANS MADDE</span><strong id="basket-count">409</strong><small>2022 listesi</small></div><div class="metric"><span>DOĞRULANMIŞ AĞIRLIK</span><strong id="basket-weight">—</strong><small>Ağırlık kaynağı gerekli</small></div><div class="metric"><span>ENDEKS DURUMU</span><strong id="basket-status">—</strong><small>Eksik veri varsa kilitli</small></div></div>
+        <div id="basket-notice" class="notice">2022 ağırlıkları resmî kaynakla doğrulanmadan endeks üretilmez.</div>
+      </section>
+
+      <footer class="footer"><span>AKÇA v0.2 ALPHA</span><span>Veri kaynağı ve zaman damgası analizden ayrılamaz.</span><span>Emir iletimi kapalı.</span></footer>
+    </main>
+  </div>
+  <div id="toast" class="toast hidden" role="status"></div>
+  <dialog id="api-key-dialog"><form method="dialog" class="key-dialog"><h3>Yerel API anahtarı</h3><p>Yazma işlemleri için .env dosyandaki AKCA_API_KEY gerekir. Anahtar yalnızca bu açık oturumda bellekte tutulur.</p><input id="api-key-input" type="password" placeholder="AKCA_API_KEY" autocomplete="off"><div><button value="cancel" class="button-quiet">Vazgeç</button><button id="api-key-save" value="save" class="button-primary">KULLAN</button></div></form></dialog>
+  <script src="assets/terminal.js"></script>
+</body>
+</html>
