@@ -396,6 +396,44 @@ async function health(){
     if(!d.write_api_enabled)status.title="Yazma işlemleri için .env içine AKCA_API_KEY eklenmeli.";
   }catch(e){status.textContent="API bağlantısı yok";status.classList.add("bad");toast("Terminal arayüzü açıldı; FastAPI sunucusu çalışmıyor.");}
 }
+
+$("#manual-financial-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const message = $("#manual-financial-message");
+  message.textContent = "";
+  try {
+    const symbol = $("#company-symbol").value.trim().toUpperCase();
+    if (!symbol) throw new Error("Önce şirket sembolünü gir.");
+    const facts = JSON.parse($("#manual-financial-json").value);
+    if (!Array.isArray(facts) || facts.length === 0) {
+      throw new Error("En az bir finansal veri satırı içeren JSON dizisi gerekli.");
+    }
+    const result = await protectedApi(
+      "/api/financial-facts/" + encodeURIComponent(symbol) + "/import",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          source_name: $("#manual-source-name").value.trim(),
+          source_url: $("#manual-source-url").value.trim(),
+          facts,
+          verified_by_operator: $("#manual-financial-verified").checked,
+          notes: "Terminal üzerinden içe aktarıldı."
+        })
+      }
+    );
+    message.textContent =
+      result.imported_rows + " satır kaydedildi. " +
+      (result.verified_by_user
+        ? "Kullanıcı tarafından doğrulanmış olarak işaretlendi; raporu yenileyebilirsin."
+        : "Doğrulama işareti verilmedi; kayıtlar şirket analizinde kullanılmayacak.");
+    toast("Finansal veri içe aktarıldı.");
+    if (result.verified_by_user) await runCompany(true);
+  } catch (error) {
+    message.textContent = error?.message || String(error);
+    message.classList.add("danger-text");
+  }
+});
+
 $("#api-key-save").addEventListener("click",()=>{});
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
   navigator.serviceWorker.register("./service-worker.js").catch(() => {});
