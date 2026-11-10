@@ -9,6 +9,7 @@ def analyze_portfolio(positions: list[dict], base_currency: str = "USD") -> dict
     if not positions:
         raise ValueError("Portföyde en az bir pozisyon olmalı.")
     rows = []
+    same_currency = False
     total_value = 0.0
     for position in positions:
         symbol = position["symbol"].upper()
@@ -30,15 +31,23 @@ def analyze_portfolio(positions: list[dict], base_currency: str = "USD") -> dict
             "market_value": value, "exchange": profile.get("exchange"),
             "history": data.get("price_history", []),
         })
-    for row in rows:
-        row["weight_pct"] = (
-            row["market_value"] / total_value * 100
-            if row.get("market_value") is not None and total_value else None
-        )
     priced = [r for r in rows if r.get("status") == "priced"]
-    concentration = sum((r.get("weight_pct") or 0) ** 2 for r in priced)
-    warnings = []
     currencies = {r.get("currency") for r in priced if r.get("currency")}
+    same_currency = len(currencies) == 1 and all(r.get("currency") for r in priced)
+    if same_currency and total_value > 0:
+        for row in rows:
+            row["weight_pct"] = (
+                row["market_value"] / total_value * 100
+                if row.get("market_value") is not None else None
+            )
+    else:
+        for row in rows:
+            row["weight_pct"] = None
+    concentration = (
+        sum((r.get("weight_pct") or 0) ** 2 for r in priced)
+        if same_currency and total_value > 0 else None
+    )
+    warnings = []
     if len(currencies) > 1:
         warnings.append("Birden fazla para birimi bulundu. FX dönüşümü yapılmadı; toplam piyasa değeri karşılaştırılabilir değildir.")
     weights_sum = sum((r.get("weight_pct") or 0) for r in priced)
@@ -51,11 +60,13 @@ def analyze_portfolio(positions: list[dict], base_currency: str = "USD") -> dict
         "base_currency_requested": base_currency.upper(),
         "priced_positions": len(priced),
         "total_positions": len(positions),
-        "market_value_unconverted": total_value if len(currencies) <= 1 else None,
+        "market_value_unconverted": total_value if same_currency else None,
         "currency_set": sorted(currencies),
-        "herfindahl_index": concentration / 10000 if total_value else None,
+        "herfindahl_index": concentration / 10000 if concentration is not None else None,
         "positions": [{k: v for k, v in r.items() if k != "history"} for r in rows],
-        "warnings": warnings + [
+        "warnings": warnings + (
+            [] if same_currency else ["Para birimleri tekilleştirilemedi. FX dönüşümü yapılmadığından portföy ağırlığı ve konsantrasyon hesaplanmadı."]
+        ) + [
             "Bu ilk sürüm portföy piyasa değerlerini pozisyon para biriminde hesaplar; çoklu para birimini tek baz para birimine çevirmeden toplamaz.",
             "Korelasyon, portföy VaR ve stres testi için ortak tarihli fiyat serileri ve FX serileri gerekir; eksik seriyle hesap yapılmaz.",
         ],
