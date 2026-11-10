@@ -79,6 +79,25 @@
             <article class="panel span-two"><div class="panel-head"><div><small>07 / ARAŞTIRMA KAPSAMI</small><h3>33 adımlı şirket inceleme protokolü</h3></div><span id="checklist-summary" class="status">—</span></div><div id="checklist-list" class="checklist"></div></article>
             <article class="panel span-two"><div class="panel-head"><div><small>08 / KAYNAK DENETİMİ</small><h3>Veri kaynakları ve sınırlamalar</h3></div></div><div id="sources-list" class="sources-list"></div><div id="evidence-gaps" class="gaps"></div></article>
           </div>
+          <form id="manual-financial-form" class="panel manual-import-panel">
+            <div class="panel-head"><div><small>09 / BIST & ŞİRKET FİNANSAL BELGELERİ</small><h3>Kaynaklı finansal veri içe aktar</h3></div><span class="status">MANUEL İÇE AKTARIM</span></div>
+            <p class="muted">KAP veya şirketin resmî raporundaki yıllık/çeyreklik finansal kalemleri JSON olarak aktar. Kaynak adresi zorunludur. “Doğruladım” işaretlenmeden kayıtlar analizde kullanılmaz.</p>
+            <div class="form-grid-inner">
+              <label>Kaynak adı<input id="manual-source-name" value="KAP finansal bildirim" required></label>
+              <label>Kaynak URL<input id="manual-source-url" type="url" placeholder="https://kap.org.tr/..." required></label>
+            </div>
+            <label class="manual-json-label">FİNANSAL VERİ SATIRLARI — JSON
+              <textarea id="manual-financial-json" rows="7" spellcheck="false" required>[
+  {"metric_code":"revenue","period_end":"2025-12-31","period_type":"annual","value":1000000,"currency":"TRY","unit":"TRY"},
+  {"metric_code":"net_income","period_end":"2025-12-31","period_type":"annual","value":100000,"currency":"TRY","unit":"TRY"},
+  {"metric_code":"total_assets","period_end":"2025-12-31","period_type":"annual","value":2500000,"currency":"TRY","unit":"TRY"},
+  {"metric_code":"equity","period_end":"2025-12-31","period_type":"annual","value":900000,"currency":"TRY","unit":"TRY"}
+]</textarea>
+            </label>
+            <label class="check-label"><input id="manual-financial-verified" type="checkbox"> Değerleri bağlantısını verdiğim resmî KAP/şirket belgesiyle karşılaştırıp doğruladım</label>
+            <button class="button-primary" type="submit">FİNANSAL VERİLERİ AKTAR</button>
+            <div id="manual-financial-message" class="muted"></div>
+          </form>
           <div class="notice" id="report-notice">Bu rapor karar desteğidir. İlk sürümde karar eşikleri tarihsel testle kalibre edilmemiştir.</div>
         </div>
       </section>
