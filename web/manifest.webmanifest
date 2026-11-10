@@ -1,0 +1,19 @@
+{
+  "name": "AKÇA Financial Research",
+  "short_name": "AKÇA",
+  "description": "Bağımsız finansal araştırma ve risk terminali",
+  "lang": "tr-TR",
+  "start_url": "./terminal.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f4ef",
+  "theme_color": "#111c18",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
