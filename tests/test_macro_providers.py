@@ -8,17 +8,18 @@ def test_evds_adapter_uses_server_key_header_and_documented_rest_path(monkeypatc
     captured = {}
 
     class FakeResponse:
+        status_code = 200
         def raise_for_status(self):
             return None
         def json(self):
             return [
                 {
                     "Tarih": "10-11-2026",
-                    "TP.DK.USD.A.YTL": "42,50",
+                    "TP_DK_USD_A_YTL": "42,50",
                 },
                 {
                     "Tarih": "11-11-2026",
-                    "TP.DK.USD.A.YTL": "42,75",
+                    "TP_DK_USD_A_YTL": "42,75",
                 },
             ]
 
@@ -63,3 +64,36 @@ def test_fred_provider_reports_missing_key_as_unconfigured(monkeypatch):
     result = fred.fetch_macro(["DGS10"])
     assert result["status"] == "not_configured"
     assert result["series"] == []
+
+
+def test_evds_catalogue_requests_data_groups_and_series(monkeypatch):
+    monkeypatch.setenv("TCMB_EVDS_API_KEY", "catalogue-test-key")
+    monkeypatch.setattr(evds, "BASE_URL", "https://evds3.example/igmevdsms-dis/")
+    calls = []
+
+    class FakeResponse:
+        status_code = 200
+        def raise_for_status(self):
+            return None
+        def json(self):
+            return {"items": [{"code": "bie_mkb", "name": "Borsa İstanbul Kıymetli Madenler"}]}
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def get(self, url, headers):
+            calls.append((url, headers))
+            return FakeResponse()
+
+    monkeypatch.setattr(evds.httpx, "Client", FakeClient)
+    groups = evds.fetch_evds_catalogue("datagroups")
+    series = evds.fetch_evds_catalogue("series", code="bie_mkb")
+    assert groups["items"][0]["code"] == "bie_mkb"
+    assert series["items"][0]["name"].startswith("Borsa İstanbul")
+    assert calls[0][0].endswith("datagroups/mode=0&type=json")
+    assert calls[1][0].endswith("serieList/type=json&code=bie_mkb")
+    assert calls[0][1]["key"] == "catalogue-test-key"
