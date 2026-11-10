@@ -3,9 +3,10 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from .config import API_KEY
+from .config import API_KEY, CORS_ORIGINS
 from .db import connect
 from .index import calculate_month, check_weights
 from .ingest import add_variant, import_items
@@ -24,6 +25,13 @@ app = FastAPI(
         "ürün eşleştirme ve sabit sepet endeks altyapısını içerir."
     ),
     lifespan=lifespan,
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PATCH"],
+    allow_headers=["Content-Type", "X-AKCA-API-Key"],
 )
 
 class VariantCreate(BaseModel):
@@ -141,6 +149,36 @@ def create_observation(payload: PriceObservation):
         if "UNIQUE constraint" in str(exc):
             raise HTTPException(status_code=409, detail="Bu fiyat gözlemi zaten kayıtlı.") from exc
         raise
+
+
+@app.get("/observations", dependencies=[Depends(require_api_key)])
+def observations(
+    period: str | None = Query(default=None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$"),
+    status: str | None = Query(default=None, pattern=r"^(pending|approved|rejected)$"),
+    item_code: str | None = Query(default=None, pattern=r"^\d{7}$"),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+):
+    filters = []
+    params: list[object] = []
+    if period:
+        filters.append("period=?")
+        params.append(period)
+    if status:
+        filters.append("quality_status=?")
+        params.append(status)
+    if item_code:
+        filters.append("item_code=?")
+        params.append(item_code)
+    where = " WHERE " + " AND ".join(filters) if filters else ""
+    conn = connect()
+    total = conn.execute(f"SELECT COUNT(*) FROM observations{where}", params).fetchone()[0]
+    rows = conn.execute(
+        f"SELECT * FROM observations{where} ORDER BY observed_at DESC, id DESC LIMIT ? OFFSET ?",
+        [*params, limit, offset],
+    ).fetchall()
+    conn.close()
+    return {"total": total, "offset": offset, "limit": limit, "observations": [dict(row) for row in rows]}
 
 @app.patch(
     "/observations/{observation_id}/review",
