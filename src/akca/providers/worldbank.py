@@ -16,7 +16,22 @@ DEFAULT_XLSX = (
     "74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/"
     "CMO-Historical-Data-Monthly.xlsx"
 )
-DATASET_LICENSE = "CC BY 4.0"
+
+DEFAULT_SERIES = (
+    "GOLD",
+    "SILVER",
+    "CRUDE_BRENT",
+    "CRUDE_WTI",
+    "NATURAL_GAS",
+    "COPPER",
+    "ALUMINUM",
+    "WHEAT_US_HRW",
+    "CORN",
+    "SOYBEANS",
+    "COFFEE_ARABICA",
+    "COCOA",
+    "SUGAR",
+)
 
 def _download_url() -> str:
     configured = os.getenv("WORLD_BANK_COMMODITY_XLSX_URL", "").strip()
@@ -26,20 +41,90 @@ def _download_url() -> str:
         with httpx.Client(timeout=25, follow_redirects=True) as client:
             page = client.get(WORLD_BANK_PAGE)
             page.raise_for_status()
-        html = page.text
         matches = re.findall(
             r"(?:https://thedocs\.worldbank\.org)?/en/doc/[A-Za-z0-9-]+/related/CMO-Historical-Data-Monthly\.xlsx",
-            html,
+            page.text,
         )
         if matches:
             link = matches[0]
             return link if link.startswith("https://") else "https://thedocs.worldbank.org" + link
-    except Exception:
+    except (httpx.HTTPError, ValueError):
+        # Use the currently configured annual release URL as a fallback.
         pass
     return DEFAULT_XLSX
 
+def _period_to_iso(value) -> str | None:
+    if value is None:
+        return None
+    if hasattr(value, "strftime"):
+        return value.strftime("%Y-%m")
+    text = str(value).strip()
+    match = re.fullmatch(r"(\d{4})M(0[1-9]|1[0-2])", text)
+    if match:
+        return f"{match.group(1)}-{match.group(2)}"
+    match = re.fullmatch(r"(\d{4})-(0[1-9]|1[0-2])", text)
+    if match:
+        return text
+    return None
+
+def parse_monthly_prices_rows(rows: list[tuple]) -> tuple[list[dict], list[dict]]:
+    """Parse the World Bank wide matrix: one row per month, one column per commodity."""
+    if not rows:
+        raise ValueError("World Bank Monthly Prices sheet is empty.")
+
+    header_index = None
+    for index, row in enumerate(rows[:15]):
+        cells = {str(cell).strip().upper() for cell in row if cell is not None}
+        if "GOLD" in cells or "CRUDE_BRENT" in cells or "OIL_BRENT" in cells:
+            header_index = index
+            break
+    if header_index is None:
+        # Published workbook currently uses the fifth Excel row as the series header.
+        header_index = 4 if len(rows) > 5 else 0
+
+    headers = [str(cell).strip() if cell is not None else "" for cell in rows[header_index]]
+    if len(headers) < 2:
+        raise ValueError("World Bank monthly series header row was not recognized.")
+
+    unit_row = rows[header_index + 1] if header_index + 1 < len(rows) else ()
+    units = {
+        headers[index]: str(unit_row[index]).strip()
+        for index in range(1, min(len(headers), len(unit_row)))
+        if headers[index] and unit_row[index] is not None
+    }
+
+    data = []
+    for row in rows[header_index + 2:]:
+        if not row:
+            continue
+        period = _period_to_iso(row[0] if len(row) else None)
+        if not period:
+            continue
+        record = {"period": period}
+        for index, heading in enumerate(headers[1:], start=1):
+            if not heading or index >= len(row):
+                continue
+            value = row[index]
+            if value is None or str(value).strip() in {"", "...", "—", "-"}:
+                continue
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                continue
+            record[heading] = number
+        if len(record) > 1:
+            data.append(record)
+
+    metadata = [
+        {"series_code": heading, "unit": units.get(heading, "see Description sheet")}
+        for heading in headers[1:] if heading
+    ]
+    if not data:
+        raise ValueError("World Bank monthly workbook contained no YYYYMMM observations.")
+    return data, metadata
+
 @lru_cache(maxsize=1)
-def _monthly_data() -> tuple[list[str], list[dict], str]:
+def _monthly_data() -> tuple[list[dict], list[dict], str]:
     url = _download_url()
     with httpx.Client(timeout=60, follow_redirects=True) as client:
         response = client.get(url)
@@ -51,60 +136,39 @@ def _monthly_data() -> tuple[list[str], list[dict], str]:
         None,
     )
     if not sheet_name:
+        workbook.close()
         raise ValueError("World Bank monthly workbook does not contain a Monthly Prices sheet.")
-    sheet = workbook[sheet_name]
-    rows = list(sheet.iter_rows(values_only=True))
+    rows = list(workbook[sheet_name].iter_rows(values_only=True))
     workbook.close()
-    if len(rows) < 3:
-        raise ValueError("World Bank commodity workbook has no usable observations.")
-    header_index = None
-    for i, row in enumerate(rows[:12]):
-        if row and any(str(cell).strip().lower() in {"commodity", "crude oil", "gold", "silver"} for cell in row if cell is not None):
-            header_index = i
-            break
-    if header_index is None:
-        header_index = 0
-    headers = [str(v).strip() if v is not None else "" for v in rows[header_index]]
-    data = []
-    for row in rows[header_index + 1:]:
-        if not row:
-            continue
-        period = row[0]
-        if period is None:
-            continue
-        period_text = str(period).strip()
-        if not re.match(r"^\d{4}M\d{2}$", period_text):
-            continue
-        record = {"period": f"{period_text[:4]}-{period_text[5:7]}"}
-        for idx, value in enumerate(row[1:], start=1):
-            if idx >= len(headers) or not headers[idx]:
-                continue
-            if isinstance(value, (int, float)):
-                record[headers[idx]] = float(value)
-        if len(record) > 1:
-            data.append(record)
-    return headers[1:], data, url
+    data, metadata = parse_monthly_prices_rows(rows)
+    return data, metadata, url
 
 def fetch_commodity_history(query: str | None = None, limit: int = 60) -> dict:
-    headers, rows, source_url = _monthly_data()
-    normalized = {h.casefold(): h for h in headers if h}
-    selected = []
+    rows, metadata, source_url = _monthly_data()
+    units = {item["series_code"]: item["unit"] for item in metadata}
+    available_codes = list(units)
     if query:
         term = query.strip().casefold()
-        selected = [name for lower, name in normalized.items() if term in lower]
+        selected = [code for code in available_codes if term in code.casefold()]
     else:
-        defaults = ("gold", "silver", "crude oil", "natural gas", "copper", "aluminum")
         selected = [
-            name for name in headers
-            if any(term in name.casefold() for term in defaults)
+            code for code in available_codes
+            if any(term in code.casefold() for term in DEFAULT_SERIES)
         ]
+
     series = []
-    for name in selected[:30]:
+    for code in selected[:30]:
         points = [
-            {"period": row["period"], "price_usd": row.get(name)}
-            for row in rows if row.get(name) is not None
+            {"period": row["period"], "price_usd": row[code]}
+            for row in rows if code in row
         ]
-        series.append({"name": name, "unit": "see World Bank workbook description sheet", "observations": points[-limit:]})
+        series.append({
+            "series_code": code,
+            "name": code.replace("_", " ").title(),
+            "unit": units.get(code, "see Description sheet"),
+            "observations": points[-limit:],
+        })
+
     return {
         "status": "ok" if series else "no_matching_series",
         "series": series,
@@ -117,9 +181,9 @@ def fetch_commodity_history(query: str | None = None, limit: int = 60) -> dict:
             "retrieved",
             source_url,
             [
-                "Dataset is published monthly and is not an intraday quote feed.",
-                "Dataset terms are CC BY 4.0; retain source attribution.",
-                "Series units and benchmark definitions must be read from the workbook Description sheet.",
+                "Monthly nominal US-dollar benchmark data; not an intraday quote feed.",
+                "The units row is preserved. Consult the workbook Description sheet for benchmark and source definitions.",
+                "Dataset attribution and CC BY 4.0 terms must be retained.",
             ],
         ),
         "retrieved_at": utc_now(),
