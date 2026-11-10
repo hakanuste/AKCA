@@ -24,9 +24,14 @@ def _safe_div(numerator: float | None, denominator: float | None) -> float | Non
         return None
     return numerator / denominator
 
-def analyze_fundamentals(sec_facts: dict | None, yahoo_data: dict | None) -> dict:
+def analyze_fundamentals(
+    sec_facts: dict | None,
+    yahoo_data: dict | None,
+    manual_facts: dict | None = None,
+) -> dict:
     sec_available = bool(sec_facts and sec_facts.get("available"))
     facts = (sec_facts or {}).get("financials_annual", {}) if sec_available else {}
+    manual_facts = manual_facts or {}
     income = (yahoo_data or {}).get("financials", {}).get("income_statement_annual", [])
 
     metrics: dict[str, Any] = {}
@@ -36,9 +41,15 @@ def analyze_fundamentals(sec_facts: dict | None, yahoo_data: dict | None) -> dic
         "equity", "operating_income", "diluted_eps",
     ):
         latest, previous, period = _latest_value(facts, code)
+        metric_source = "sec_edgar" if latest is not None else None
+        source_url = None
+        if latest is None and manual_facts.get(code):
+            latest, previous, period = _latest_value(manual_facts, code)
+            metric_source = "manual_user_verified" if latest is not None else None
+            source_url = manual_facts[code][0].get("source_url")
         metrics[code] = {
             "latest": latest, "previous": previous, "period_end": period,
-            "source": "sec_edgar" if latest is not None else None,
+            "source": metric_source, "source_url": source_url,
         }
 
     yahoo_latest = income[0] if income else {}
@@ -107,8 +118,13 @@ def analyze_fundamentals(sec_facts: dict | None, yahoo_data: dict | None) -> dic
     }
 
     warnings = []
-    if not sec_available:
-        warnings.append("SEC XBRL finansalları bu sembol için eşleşmedi; resmî şirket finansalı mevcut değil.")
+    has_manual_facts = any(manual_facts.get(code) for code in manual_facts)
+    if not sec_available and not has_manual_facts:
+        warnings.append("SEC XBRL finansalları eşleşmedi ve doğrulanmış manuel şirket finansalı yüklenmedi.")
+    elif has_manual_facts and not sec_available:
+        warnings.append(
+            "Bazı finansal kalemler kullanıcı tarafından kaynak URL'siyle yüklenmiş ve doğrulanmış olarak işaretlenmiş manuel kayıtlardan alındı; değerler belgeye karşı ayrıca kontrol edilmelidir."
+        )
     if yahoo_fallback_used:
         warnings.append(
             "Bazı metrikler ikincil Yahoo Finance şirket tablolarından alındı; SEC/şirket bildirimiyle teyit edilmelidir."
@@ -128,6 +144,7 @@ def analyze_fundamentals(sec_facts: dict | None, yahoo_data: dict | None) -> dic
         "derived": derived,
         "provider_precedence": {
             "primary": "SEC EDGAR XBRL when mapped",
+            "manual_fallback": "user-uploaded source-linked facts marked verified by the operator",
             "secondary": "Yahoo Finance statements only as explicitly labeled fallback",
         },
         "warnings": warnings,
