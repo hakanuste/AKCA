@@ -251,7 +251,7 @@ $("#evds-load").addEventListener("click",async()=>{
 
 async function loadPortfolios(){
   try{
-    portfolios=await api("/api/portfolios");const s=$("#portfolio-select");s.replaceChildren();
+    portfolios=await protectedApi("/api/portfolios");const s=$("#portfolio-select");s.replaceChildren();
     portfolios.forEach(p=>{const o=el("option","",p.name);o.value=p.portfolio_id;s.append(o);});
   }catch(e){showError("#portfolio-error",e);}
 }
@@ -277,7 +277,7 @@ $("#portfolio-select").addEventListener("change",e=>loadPortfolioAnalysis(e.targ
 async function loadPortfolioAnalysis(id){
   if(!id)return;
   try{
-    const d=await api("/api/portfolios/"+encodeURIComponent(id)+"/analysis");const host=$("#portfolio-results");host.replaceChildren();
+    const d=await protectedApi("/api/portfolios/"+encodeURIComponent(id)+"/analysis");const host=$("#portfolio-results");host.replaceChildren();
     host.append(el("h3","","Portföy görünümü"));
     (d.warnings||[]).forEach(w=>host.append(el("div","notice",w)));
     table(host,["Sembol","Adet","Fiyat","Para birimi","Piyasa değeri","Ağırlık"],(d.positions||[]).map(p=>[p.symbol,p.quantity??"—",fmt(p.price),p.currency||"—",fmt(p.market_value),pct(p.weight_pct)]));
