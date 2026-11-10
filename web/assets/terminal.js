@@ -234,7 +234,7 @@ $("#macro-load").addEventListener("click",loadMacro);
 async function loadMacro(){
   clearError("#macro-error");const host=$("#macro-results");host.replaceChildren();
   try{
-    const d=await api("/api/macro?series=FEDFUNDS,DGS10,CPIAUCSL,UNRATE,DEXUSAL&observations=24");
+    const d=await api("/api/macro?series=FEDFUNDS,DGS2,DGS10,DGS30,T10Y2Y,DFII10,CPIAUCSL,UNRATE,DEXUSAL&observations=24");
     if(d.status==="not_configured"){host.append(el("div","notice","FRED_API_KEY tanımlı değil. ABD makro serileri için FRED API anahtarı sunucu .env dosyasına eklenmeli."));return;}
     (d.series||[]).forEach(s=>{const c=el("div","metric");c.append(el("span","",s.name||s.series_id),el("strong","",fmt(s.latest?.value)),el("small","",(s.latest?.date||"—")+" · "+s.series_id));host.append(c);});
     if(!host.children.length)host.append(el("div","empty","FRED serisi dönmedi."));
