@@ -10,7 +10,11 @@ BASE = "https://api.stlouisfed.org/fred/series/observations"
 
 DEFAULT_SERIES = {
     "FEDFUNDS": "US Federal Funds Rate",
+    "DGS2": "US 2-Year Treasury Yield",
     "DGS10": "US 10-Year Treasury Yield",
+    "DGS30": "US 30-Year Treasury Yield",
+    "T10Y2Y": "US 10Y-2Y Treasury Spread",
+    "DFII10": "US 10-Year Real Treasury Yield",
     "CPIAUCSL": "US CPI (All Urban Consumers)",
     "UNRATE": "US Unemployment Rate",
     "DEXUSAL": "US Dollar / Turkish Lira",
