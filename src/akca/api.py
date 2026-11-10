@@ -491,7 +491,7 @@ def dashboard_summary():
         "latest_index_run": dict(latest_run) if latest_run else None,
     }
 
-@app.get("/api/watchlist")
+@app.get("/api/watchlist", dependencies=[Depends(require_api_key)])
 def get_watchlist():
     conn = connect()
     rows = conn.execute("SELECT * FROM watchlist ORDER BY added_at DESC").fetchall()
@@ -582,7 +582,7 @@ def create_portfolio(payload: PortfolioCreate):
     conn.close()
     return {"portfolio_id": portfolio_id, "name": payload.name, "base_currency": payload.base_currency.upper()}
 
-@app.get("/api/portfolios")
+@app.get("/api/portfolios", dependencies=[Depends(require_api_key)])
 def list_portfolios():
     conn = connect()
     rows = conn.execute("SELECT * FROM portfolios ORDER BY created_at DESC").fetchall()
@@ -610,7 +610,7 @@ def add_portfolio_position(portfolio_id: str, payload: PositionCreate):
     conn.close()
     return {"portfolio_id": portfolio_id, "symbol": payload.symbol.upper(), "saved": True}
 
-@app.get("/api/portfolios/{portfolio_id}/analysis")
+@app.get("/api/portfolios/{portfolio_id}/analysis", dependencies=[Depends(require_api_key)])
 def portfolio_analysis(portfolio_id: str):
     conn = connect()
     portfolio = conn.execute("SELECT * FROM portfolios WHERE portfolio_id=?", (portfolio_id,)).fetchone()
