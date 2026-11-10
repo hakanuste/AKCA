@@ -158,3 +158,20 @@ def test_value_screener_refuses_to_rank_insufficient_data():
     assert result["provisional_score"] is None
     assert result["rankable"] is False
     assert result["score_coverage_pct"] == 0
+
+
+def test_portfolio_does_not_publish_weights_when_a_holding_is_unpriced(monkeypatch):
+    def fake_fetch(symbol, history_period="1y"):
+        if symbol == "MISSING":
+            return {"profile": {"current_price": None, "currency": None}, "price_history": []}
+        return {"profile": {"current_price": 10, "currency": "USD"}, "price_history": []}
+
+    monkeypatch.setattr(portfolio_module, "fetch_equity", fake_fetch)
+    result = portfolio_module.analyze_portfolio(
+        [{"symbol": "AAA", "quantity": 1}, {"symbol": "MISSING", "quantity": 5}],
+        base_currency="USD",
+    )
+    assert result["market_value_unconverted"] is None
+    assert result["herfindahl_index"] is None
+    assert all(p["weight_pct"] is None for p in result["positions"])
+    assert any("fiyatı veya para birimi eksik" in w for w in result["warnings"])
