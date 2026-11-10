@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
 from ..db import connect
@@ -106,7 +106,7 @@ def _cache_put(symbol: str, payload: dict, source: str = "SEC+Yahoo"):
     conn.execute(
         "INSERT OR REPLACE INTO market_cache(cache_key,payload_json,source,retrieved_at,expires_at) VALUES(?,?,?,?,?)",
         (f"research:{symbol}", json.dumps(payload, ensure_ascii=False, default=str),
-         source, now.isoformat(), (now.replace(minute=(now.minute + 15) % 60) if False else now).isoformat()),
+         source, now.isoformat(), (now + timedelta(minutes=15)).isoformat()),
     )
     conn.commit()
     conn.close()
@@ -183,9 +183,65 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
     }
     values = list(report["completeness"].values())
     report["data_completeness_pct"] = round(sum(bool(v) for v in values) / len(values) * 100, 1)
+    _persist_market_data(report, market, sec)
     _persist_report(report)
     _cache_put(symbol, report)
     return report
+
+def _persist_market_data(report: dict, market: dict, sec: dict) -> None:
+    conn = connect()
+    profile = report.get("profile", {})
+    conn.execute(
+        """
+        INSERT OR REPLACE INTO company_profiles(
+            symbol,company_name,exchange,currency,country,sector,industry,website,
+            market_cap,shares_outstanding,last_price,price_timestamp,source,source_url,retrieved_at
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        (
+            report["symbol"], profile.get("name"), profile.get("exchange"),
+            profile.get("currency"), profile.get("country"), profile.get("sector"),
+            profile.get("industry"), profile.get("website"), profile.get("market_cap"),
+            profile.get("shares_outstanding"), profile.get("current_price"),
+            profile.get("price_timestamp"), "yahoo_finance_via_yfinance",
+            "https://finance.yahoo.com/", report["as_of"],
+        ),
+    )
+    for bar in market.get("price_history", []):
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO price_history(
+                symbol,trade_date,open,high,low,close,adjusted_close,volume,currency,source,retrieved_at
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                report["symbol"], bar["date"], bar.get("open"), bar.get("high"),
+                bar.get("low"), bar["close"], bar.get("adjusted_close"),
+                bar.get("volume"), profile.get("currency"),
+                "yahoo_finance_via_yfinance", report["as_of"],
+            ),
+        )
+    sec_financials = sec.get("financials_annual", {}) if sec.get("available") else {}
+    for metric, entries in sec_financials.items():
+        for row in entries:
+            if row.get("value") is None:
+                continue
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO financial_snapshots(
+                    symbol,metric_code,period_end,period_type,value,currency,unit,
+                    source,source_url,retrieved_at
+                ) VALUES(?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    report["symbol"], metric, row["period_end"], "annual",
+                    row["value"], row.get("unit"), row.get("unit"),
+                    "sec_edgar", "https://www.sec.gov/edgar/sec-api-documentation",
+                    report["as_of"],
+                ),
+            )
+    conn.commit()
+    conn.close()
 
 def _persist_report(report: dict) -> None:
     conn = connect()
