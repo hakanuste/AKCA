@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, field_validator
 from .db import connect
 
 class PriceObservation(BaseModel):
- period: str = Field(pattern=r"^\\d{4}-(0[1-9]|1[0-2])$")
+ period: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
  item_code: str
  vendor: str = Field(min_length=2)
  product_description: str = Field(min_length=2)
