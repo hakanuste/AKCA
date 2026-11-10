@@ -10,10 +10,7 @@ from .common import source_record, utc_now
 
 BASE = "https://data.sec.gov"
 COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
-DEFAULT_UA = os.getenv(
-    "AKCA_SEC_USER_AGENT",
-    "AKCA Financial Research/0.2 (https://github.com/hakanuste/AKCA)",
-)
+DEFAULT_UA = os.getenv("AKCA_SEC_USER_AGENT", "").strip()
 
 DURATION_METRICS = {
     "revenue", "net_income", "operating_cash_flow", "capex", "operating_income", "diluted_eps"
@@ -157,6 +154,18 @@ def _debt_total(financials: dict) -> None:
 
 def fetch_company(ticker: str) -> dict:
     symbol = ticker.strip().upper()
+    if not DEFAULT_UA or "example.com" in DEFAULT_UA.casefold() or "your-email" in DEFAULT_UA.casefold():
+        return {
+            "available": False,
+            "symbol": symbol,
+            "reason": "SEC EDGAR erişimi için .env dosyasında gerçek iletişim bilgisi içeren AKCA_SEC_USER_AGENT tanımlanmalı.",
+            "provider": source_record(
+                "sec_edgar", "U.S. SEC EDGAR", "filings_and_xbrl_fundamentals",
+                "public_api_no_key", "user_agent_not_configured",
+                "https://www.sec.gov/edgar/sec-api-documentation",
+                ["SEC automated access requires an identifying User-Agent with a real contact address."],
+            ),
+        }
     mapping = _ticker_map()
     match = mapping.get(symbol)
     if not match:
