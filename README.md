@@ -55,7 +55,7 @@ API dokümantasyonu:
 Canlı veri için .env içindeki isteğe bağlı anahtarları yapılandır:
 - AKCA_SEC_USER_AGENT: gerçek bir iletişim e-postası içermeli.
 - FRED_API_KEY: ABD makro serileri ve reel USD enflasyon ayarı.
-- TCMB_EVDS_API_KEY: Türkiye makro/FX.
+- TCMB_EVDS_API_KEY: Türkiye makro/FX, BIST endeks ve tahvil serileri. Varsayılan servis belgelenmiş EVDS 2 REST uyumluluk endpoint'idir; EVDS 3 katalog kodları terminalden girilir.
 - COINGECKO_DEMO_API_KEY: CoinGecko API kotası için.
 - AKCA_API_KEY betik tarafından yerelde oluşturulur; bunu GitHub'a, terminal ekran görüntüsüne veya herkese açık bir web sayfasına koyma.
 
