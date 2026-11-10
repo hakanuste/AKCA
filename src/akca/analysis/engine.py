@@ -287,7 +287,9 @@ def _persist_market_data(report: dict, market: dict, sec: dict) -> None:
                 """,
                 (
                     report["symbol"], metric, row["period_end"], "annual",
-                    row["value"], row.get("unit"), row.get("unit"),
+                    row["value"],
+                    "USD" if row.get("unit") == "USD" else None,
+                    row.get("unit"),
                     "sec_edgar", "https://www.sec.gov/edgar/sec-api-documentation",
                     report["as_of"],
                 ),
