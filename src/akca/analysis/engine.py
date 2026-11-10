@@ -159,10 +159,14 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
     results = {}
     errors = {}
     with ThreadPoolExecutor(max_workers=2) as pool:
-        futures = {
-            pool.submit(_fetch_market, symbol): "market",
-            pool.submit(_sec_not_applicable, symbol) if symbol.endswith(".IS") else pool.submit(fetch_company, symbol): "sec",
-        }
+        market_future = pool.submit(_fetch_market, symbol)
+        futures = {market_future: "market"}
+        sec_is_applicable = not symbol.endswith(".IS")
+        if sec_is_applicable:
+            futures[pool.submit(fetch_company, symbol)] = "sec"
+        else:
+            results["sec"] = _sec_not_applicable(symbol)
+
         for future in as_completed(futures):
             name = futures[future]
             try:
