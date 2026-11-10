@@ -170,6 +170,7 @@ def ipo_performance(symbol: str) -> dict:
         "offer_to_current_return_pct": local_total_return if local_total_return is not None else local_price_return,
         "usd_offer_price": usd_offer,
         "usd_current_total_value": usd_current,
+        "usd_price_return_pct": usd_price_return,
         "usd_total_return_pct": usd_total_return,
         "real_usd_total_return_pct": real_usd_return,
         "cumulative_split_factor": split_factor,
