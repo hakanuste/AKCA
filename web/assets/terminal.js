@@ -74,6 +74,57 @@ function setView(name){
 $$(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
 $$("[data-open]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.open)));
 
+
+function renderPriceChart(rows, currency) {
+  const host = $("#price-chart");
+  host.replaceChildren();
+  const data = (rows || []).map(row => ({
+    date: row.date,
+    price: Number(row.adjusted_close ?? row.close)
+  })).filter(row => Number.isFinite(row.price) && row.price > 0)
+    .slice(-252);
+  if (data.length < 2) {
+    host.append(el("div", "empty", "Grafik oluşturmak için yeterli tarihli fiyat verisi yok."));
+    $("#price-chart-period").textContent = "VERİ YETERSİZ";
+    return;
+  }
+  const width = 900, height = 230, padX = 18, padY = 18;
+  const values = data.map(x => x.price);
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || Math.max(max * 0.01, 1);
+  const x = index => padX + index * (width - 2 * padX) / (data.length - 1);
+  const y = value => height - padY - (value - min) * (height - 2 * padY) / range;
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "Gerçek tarihli fiyat grafiği");
+  const makeSvg = (tag, attrs) => {
+    const item = document.createElementNS(svgNS, tag);
+    Object.entries(attrs).forEach(([k,v]) => item.setAttribute(k, String(v)));
+    return item;
+  };
+  for (let line = 0; line < 4; line++) {
+    const yy = padY + line * (height - 2 * padY) / 3;
+    svg.append(makeSvg("line", {x1:padX,y1:yy,x2:width-padX,y2:yy,class:"chart-grid"}));
+  }
+  const points = data.map((row, index) => [x(index), y(row.price)]);
+  const pathData = points.map((p,index) => (index ? "L" : "M") + p[0].toFixed(2) + " " + p[1].toFixed(2)).join(" ");
+  const areaData = pathData + " L " + x(data.length - 1).toFixed(2) + " " + (height-padY) + " L " + padX + " " + (height-padY) + " Z";
+  svg.append(makeSvg("path", {d:areaData,class:"chart-area-fill"}));
+  svg.append(makeSvg("path", {d:pathData,class:"chart-price-line"}));
+  svg.append(makeSvg("circle", {cx:points[points.length-1][0],cy:points[points.length-1][1],r:4,class:"chart-endpoint"}));
+  host.append(svg);
+  const labels = el("div", "chart-axis-labels");
+  labels.append(
+    el("span", "", data[0].date),
+    el("strong", "", new Intl.NumberFormat("tr-TR",{style:"currency",currency:currency||"USD",maximumFractionDigits:2}).format(values[values.length-1])),
+    el("span", "", data[data.length-1].date)
+  );
+  host.append(labels);
+  $("#price-chart-period").textContent = data.length + " GÜNLÜK GÖZLEM";
+}
+
 function renderCompany(r){
   toggle("#company-report",true);
   const p=r.profile||{},f=r.fundamentals||{},m=f.metrics||{},d=f.derived||{},t=r.technical||{},ind=t.indicators||{},v=r.valuation||{},rec=r.recommendation||{};
@@ -86,6 +137,7 @@ function renderCompany(r){
   $("#m-cap").textContent=compact(p.market_cap);$("#m-currency").textContent=p.currency||"Para birimi yok";
   $("#m-pe").textContent=fmt(v.trailing_pe_provider);$("#m-growth").textContent=pct(d.revenue_growth_yoy_pct);
   $("#m-rsi").textContent=fmt(ind.rsi_14,1);$("#m-trend").textContent=ind.trend_state||"Teknik trend —";
+  renderPriceChart(r.price_history, p.currency);
   $("#fundamental-status").textContent=f.status||"—";
   const fin=[
     ["Gelir",m.revenue?.latest,m.revenue?.unit],["Net kâr",m.net_income?.latest,m.net_income?.unit],
