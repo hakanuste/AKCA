@@ -5,7 +5,6 @@ import pytest
 from akca.analysis import ipo as ipo_module
 from akca.analysis import portfolio as portfolio_module
 from akca.analysis.screener import score_company
-from akca.db import connect
 
 def test_ipo_total_return_applies_split_and_dividend_correctly(tmp_path, monkeypatch):
     db_path = tmp_path / "ipo-test.db"
