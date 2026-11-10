@@ -4,7 +4,7 @@ import hmac
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
@@ -18,6 +18,7 @@ from .analysis.institutional import (
     add_broker_research, add_forecast_outcome, broker_consensus,
 )
 from .analysis.ipo import add_ipo, ipo_performance, recent_ipos
+from .analysis.manual_data import import_financial_facts
 from .analysis.portfolio import analyze_portfolio
 from .analysis.screener import screen_symbols
 from .config import API_KEY, CORS_ORIGINS, ROOT
@@ -99,6 +100,25 @@ class PositionCreate(BaseModel):
     quantity: float = Field(gt=0)
     average_cost: float | None = Field(default=None, gt=0)
     cost_currency: str | None = Field(default=None, min_length=3, max_length=3)
+
+class ManualFinancialFact(BaseModel):
+    metric_code: Literal[
+        "revenue", "net_income", "operating_cash_flow", "capex",
+        "total_assets", "total_liabilities", "cash", "long_term_debt",
+        "equity", "operating_income", "diluted_eps",
+    ]
+    period_end: str = Field(pattern=r"^\\d{4}-\\d{2}-\\d{2}$")
+    period_type: Literal["annual", "quarterly"] = "annual"
+    value: float
+    currency: str | None = Field(default=None, max_length=12)
+    unit: str | None = Field(default=None, max_length=40)
+
+class ManualFinancialImport(BaseModel):
+    source_name: str = Field(min_length=2, max_length=160)
+    source_url: str = Field(min_length=8, max_length=2048)
+    facts: list[ManualFinancialFact] = Field(min_length=1, max_length=500)
+    verified_by_operator: bool = False
+    notes: str | None = Field(default=None, max_length=2000)
 
 class IPOCreate(BaseModel):
     symbol: str = Field(min_length=1, max_length=40)
@@ -519,6 +539,38 @@ def remove_watchlist_item(symbol: str):
     if not cur.rowcount:
         raise HTTPException(status_code=404, detail="Sembol izleme listesinden bulunamadı.")
     return {"symbol": symbol.upper(), "deleted": True}
+
+
+@app.post("/api/financial-facts/{symbol}/import", dependencies=[Depends(require_api_key)], status_code=201)
+def import_company_financial_facts(symbol: str, payload: ManualFinancialImport):
+    try:
+        result = import_financial_facts(
+            symbol=symbol,
+            source_name=payload.source_name,
+            source_url=payload.source_url,
+            facts=[fact.model_dump() for fact in payload.facts],
+            verified=payload.verified_by_operator,
+            notes=payload.notes,
+        )
+        return result
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.get("/api/financial-facts/{symbol}", dependencies=[Depends(require_api_key)])
+def list_company_financial_facts(symbol: str):
+    conn = connect()
+    records = conn.execute(
+        """
+        SELECT metric_code,period_end,period_type,value,currency,unit,source,
+               source_url,retrieved_at,verified,notes
+        FROM financial_snapshots
+        WHERE symbol=?
+        ORDER BY period_end DESC,metric_code
+        """,
+        (symbol.strip().upper(),),
+    ).fetchall()
+    conn.close()
+    return {"symbol": symbol.strip().upper(), "count": len(records), "facts": [dict(row) for row in records]}
 
 @app.post("/api/institutional/research", dependencies=[Depends(require_api_key)], status_code=201)
 def create_broker_research(payload: BrokerResearchCreate):
