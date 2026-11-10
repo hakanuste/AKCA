@@ -33,13 +33,19 @@ def _rsi(values: list[float], period: int = 14) -> float | None:
     if len(values) <= period:
         return None
     changes = [values[i] - values[i - 1] for i in range(1, len(values))]
-    gains = [max(change, 0) for change in changes[-period:]]
-    losses = [abs(min(change, 0)) for change in changes[-period:]]
-    avg_gain, avg_loss = mean(gains), mean(losses)
-    if avg_loss == 0:
-        return 100.0 if avg_gain > 0 else 50.0
-    rs = avg_gain / avg_loss
-    return 100 - 100 / (1 + rs)
+    gains = [max(change, 0.0) for change in changes]
+    losses = [abs(min(change, 0.0)) for change in changes]
+
+    average_gain = mean(gains[:period])
+    average_loss = mean(losses[:period])
+    for gain, loss in zip(gains[period:], losses[period:]):
+        average_gain = ((average_gain * (period - 1)) + gain) / period
+        average_loss = ((average_loss * (period - 1)) + loss) / period
+
+    if average_loss == 0:
+        return 100.0 if average_gain > 0 else 50.0
+    relative_strength = average_gain / average_loss
+    return 100 - 100 / (1 + relative_strength)
 
 def _max_drawdown(values: list[float]) -> float | None:
     if not values:
