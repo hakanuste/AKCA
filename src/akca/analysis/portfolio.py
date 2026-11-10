@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from math import sqrt
-from statistics import mean, pstdev
-
 from ..providers.yahoo import fetch_equity
 
 def analyze_portfolio(positions: list[dict], base_currency: str = "USD") -> dict:
@@ -62,7 +59,6 @@ def analyze_portfolio(positions: list[dict], base_currency: str = "USD") -> dict
         warnings.append(
             f"Pozisyonlar {next(iter(currencies))} cinsinden hesaplandı; istenen baz para birimi {base_currency.upper()} olduğu halde FX dönüşümü yapılmadı."
         )
-    weights_sum = sum((r.get("weight_pct") or 0) for r in priced)
     if len(priced) < len(positions):
         warnings.append("Bazı pozisyonların fiyatı alınamadığından portföy kapsamı eksik.")
     if any((r.get("weight_pct") or 0) > 35 for r in priced):
