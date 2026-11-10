@@ -281,4 +281,11 @@ def connect(db_path: Path | str | None = None) -> sqlite3.Connection:
         conn.execute("ALTER TABLE broker_research ADD COLUMN reference_price_at_publication REAL")
     if "horizon_days" not in broker_columns:
         conn.execute("ALTER TABLE broker_research ADD COLUMN horizon_days INTEGER")
+    financial_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(financial_snapshots)").fetchall()
+    }
+    if "verified" not in financial_columns:
+        conn.execute("ALTER TABLE financial_snapshots ADD COLUMN verified INTEGER NOT NULL DEFAULT 0")
+    if "notes" not in financial_columns:
+        conn.execute("ALTER TABLE financial_snapshots ADD COLUMN notes TEXT")
     return conn
