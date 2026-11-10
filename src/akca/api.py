@@ -107,7 +107,7 @@ class ManualFinancialFact(BaseModel):
         "total_assets", "total_liabilities", "cash", "long_term_debt",
         "equity", "operating_income", "diluted_eps",
     ]
-    period_end: str = Field(pattern=r"^\\d{4}-\\d{2}-\\d{2}$")
+    period_end: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
     period_type: Literal["annual", "quarterly"] = "annual"
     value: float
     currency: str | None = Field(default=None, max_length=12)
