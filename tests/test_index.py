@@ -63,7 +63,9 @@ def test_monthly_index_uses_exact_previous_month_and_variant_weights(tmp_path):
     assert result["previous_period"] == "2026-09"
     assert result["monthly_inflation_pct"] == pytest.approx(10)
     assert result["coverage_weight_pct"] == pytest.approx(100)
-    assert result["index_value"] is None
+    assert result["index_value"] == pytest.approx(110)
+    assert result["index_rebased"] is True
+    assert result["index_base_period"] == "2026-09"
 
 def test_missing_current_month_data_blocks_index(tmp_path):
     db = tmp_path / "akca.db"
