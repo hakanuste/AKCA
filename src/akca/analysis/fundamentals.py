@@ -27,7 +27,6 @@ def _safe_div(numerator: float | None, denominator: float | None) -> float | Non
 def analyze_fundamentals(sec_facts: dict | None, yahoo_data: dict | None) -> dict:
     sec_available = bool(sec_facts and sec_facts.get("available"))
     facts = (sec_facts or {}).get("financials_annual", {}) if sec_available else {}
-    profile = (yahoo_data or {}).get("profile", {})
     income = (yahoo_data or {}).get("financials", {}).get("income_statement_annual", [])
 
     metrics: dict[str, Any] = {}
