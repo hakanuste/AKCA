@@ -51,7 +51,7 @@ def analyze_portfolio(positions: list[dict], base_currency: str = "USD") -> dict
     if len(currencies) > 1:
         warnings.append("Birden fazla para birimi bulundu. FX dönüşümü yapılmadı; toplam piyasa değeri karşılaştırılabilir değildir.")
     weights_sum = sum((r.get("weight_pct") or 0) for r in priced)
-    if weights_sum < 99.99:
+    if len(priced) < len(positions):
         warnings.append("Bazı pozisyonların fiyatı alınamadığından portföy kapsamı eksik.")
     if any((r.get("weight_pct") or 0) > 35 for r in priced):
         warnings.append("Tek varlıkta %35 üzerinde konsantrasyon var.")
