@@ -113,6 +113,39 @@ def _cache_put(symbol: str, payload: dict, source: str = "SEC+Yahoo"):
     conn.commit()
     conn.close()
 
+
+def _fetch_market(symbol: str) -> dict:
+    primary = fetch_equity(symbol)
+    history = primary.get("price_history", [])
+    if history or symbol.endswith(".IS") or any(ch in symbol for ch in "^=$"):
+        return primary
+    # BIST listings are commonly discoverable on public market-data clients with .IS suffix.
+    # This is an indicative fallback, not a licensed exchange feed.
+    fallback = fetch_equity(symbol + ".IS")
+    if fallback.get("price_history"):
+        fallback.setdefault("warnings", []).append(
+            "Sembol .IS uzantısıyla bulundu. BIST fiyatı gösterge amaçlı ikincil sağlayıcıdan alınmıştır; lisanslı BIST veri akışı değildir."
+        )
+        return fallback
+    return primary
+
+def _sec_not_applicable(symbol: str) -> dict:
+    return {
+        "available": False,
+        "symbol": symbol,
+        "reason": "Bu sembol BIST/ABD dışı veya SEC ticker eşleşmesi bulunmayan bir ihraççı olarak değerlendirildi. Türkiye şirket bildirimleri için KAP/MKK veri servisi bağlantısı gerekir.",
+        "provider": {
+            "source_id": "kap_mkk_api",
+            "source_name": "KAP / MKK API Portal",
+            "status": "credentials_and_product_access_required",
+            "url": "https://apiportal.mkk.com.tr/",
+            "limitations": [
+                "KAP veri yayın servisleri için MKK API Portal kaydı, API anahtarı ve ilgili veri ürününe erişim gerekir.",
+                "Borsa İstanbul fiyat akışı için ayrıca lisanslı veri dağıtıcısı sözleşmesi gerekir.",
+            ],
+        },
+    }
+
 def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
     symbol = symbol.strip().upper()
     if not symbol or len(symbol) > 40:
@@ -127,8 +160,8 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
     errors = {}
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = {
-            pool.submit(fetch_equity, symbol): "market",
-            pool.submit(fetch_company, symbol): "sec",
+            pool.submit(_fetch_market, symbol): "market",
+            pool.submit(_sec_not_applicable, symbol) if symbol.endswith(".IS") else pool.submit(fetch_company, symbol): "sec",
         }
         for future in as_completed(futures):
             name = futures[future]
@@ -146,7 +179,13 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
     valuation = _valuation(profile, fundamentals)
     risk_flags = _risk_review(fundamentals, technical, profile)
     recommendation = _recommendation_gate(profile, fundamentals, technical, risk_flags)
+    resolved_symbol = profile.get("symbol") or symbol
+    is_bist = str(resolved_symbol).endswith(".IS")
     warnings = list(market.get("warnings", []))
+    if is_bist:
+        warnings.append(
+            "BIST şirketinde KAP finansal bildirimleri ve lisanslı BIST piyasa verisi bu ilk kurulumda henüz otomatik bağlı değil. Finansal kalemleri resmî KAP/MKK bildirimiyle doğrulayın."
+        )
     if errors:
         warnings.extend(f"{key} provider error: {value}" for key, value in errors.items())
     if sec.get("available") is False:
@@ -159,6 +198,7 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
         "report_id": str(uuid4()),
         "symbol": symbol,
         "company_name": profile.get("name") or sec.get("company_name") or symbol,
+        "market_region": "BIST" if is_bist else ("US" if sec.get("available") else "global_or_unclassified"),
         "as_of": datetime.now(timezone.utc).isoformat(),
         "profile": profile,
         "fundamentals": fundamentals,
