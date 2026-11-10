@@ -29,7 +29,8 @@ def normalize_price(price_try: float, shipping_try: float, quantity: float, unit
     denominator = quantity * factor
     if denominator <= 0:
         raise ValueError("Normalize edilen miktar sıfırdan büyük olmalı.")
-    # Delivery remains a separately reported purchase cost; it is not part of the product unit price.\n    return price_try / denominator, canonical_unit
+    # Delivery remains a separately reported purchase cost; it is not part of the product unit price.
+    return price_try / denominator, canonical_unit
 
 class PriceObservation(BaseModel):
     period: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
