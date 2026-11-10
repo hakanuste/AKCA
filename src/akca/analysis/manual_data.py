@@ -139,7 +139,15 @@ def load_verified_annual_facts(symbol: str, db_path=None) -> tuple[dict, list[di
 
     facts: dict[str, list[dict]] = {}
     source_records: dict[tuple[str, str], dict] = {}
+    seen_periods: dict[str, set[str]] = {}
     for row in rows:
+        seen = seen_periods.setdefault(row["metric_code"], set())
+        # Different source documents may contain the same period; use the most
+        # recently imported verified fact for that metric/period, never count
+        # two versions as current and prior years.
+        if row["period_end"] in seen:
+            continue
+        seen.add(row["period_end"])
         facts.setdefault(row["metric_code"], []).append({
             "value": row["value"],
             "period_end": row["period_end"],
