@@ -39,3 +39,32 @@ def test_api_health_reference_data_terminal_and_portfolio_auth(tmp_path, monkeyp
         )
         assert listed.status_code == 200
         assert any(row["portfolio_id"] == portfolio_id for row in listed.json())
+
+        imported = client.post(
+            "/api/financial-facts/AEFES.IS/import",
+            headers={"X-AKCA-API-Key": "unit-test-secret"},
+            json={
+                "source_name": "KAP annual filing",
+                "source_url": "https://kap.org.tr/tr/Bildirim/123456",
+                "verified_by_operator": True,
+                "facts": [
+                    {
+                        "metric_code": "revenue",
+                        "period_end": "2025-12-31",
+                        "period_type": "annual",
+                        "value": 125000,
+                        "currency": "TRY",
+                        "unit": "TRY",
+                    }
+                ],
+            },
+        )
+        assert imported.status_code == 201
+        assert imported.json()["imported_rows"] == 1
+        saved_facts = client.get(
+            "/api/financial-facts/AEFES.IS",
+            headers={"X-AKCA-API-Key": "unit-test-secret"},
+        )
+        assert saved_facts.status_code == 200
+        assert saved_facts.json()["facts"][0]["metric_code"] == "revenue"
+        assert saved_facts.json()["facts"][0]["verified"] == 1
