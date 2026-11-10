@@ -12,6 +12,7 @@ from .fundamentals import analyze_fundamentals
 from .technical import analyze_price_history
 from .checklist import build_company_checklist
 from .institutional import broker_consensus
+from .manual_data import load_verified_annual_facts
 
 METHODOLOGY_VERSION = "akca-research-0.2.0"
 
@@ -177,7 +178,8 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
     if str(resolved_symbol).endswith(".IS"):
         sec = _sec_not_applicable(str(resolved_symbol))
     technical = analyze_price_history(history)
-    fundamentals = analyze_fundamentals(sec, market)
+    manual_facts, manual_sources = load_verified_annual_facts(symbol)
+    fundamentals = analyze_fundamentals(sec, market, manual_facts)
     valuation = _valuation(profile, fundamentals)
     risk_flags = _risk_review(fundamentals, technical, profile)
     recommendation = _recommendation_gate(profile, fundamentals, technical, risk_flags)
@@ -211,6 +213,7 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
             item for item in (
                 market.get("provider"),
                 sec.get("provider"),
+                *manual_sources,
             ) if item
         ],
         "filings": sec.get("recent_filings", []),
