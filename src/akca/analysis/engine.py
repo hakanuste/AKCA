@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from ..db import connect
@@ -96,7 +95,7 @@ def _cache_get(symbol: str, ttl_minutes: int = 15):
         return None
     try:
         expires = datetime.fromisoformat(row["expires_at"])
-        if expires <= datetime.now(timezone.utc):
+        if expires <= datetime.now(UTC):
             return None
         return json.loads(row["payload_json"])
     except (ValueError, json.JSONDecodeError):
