@@ -27,7 +27,7 @@ AKÇA çeşitli kaynaklara bağlanabilen adaptörler içerir; bu, tüm piyasalar
 - SEC EDGAR: ABD bildirimcileri için ücretsiz açık veri; gerçek iletişim bilgisi içeren User-Agent gerekir. BIST şirketlerini kapsamaz.
 - Borsa İstanbul: resmî piyasa fiyatı/işlem geçmişi için uygun lisanslı veri dağıtıcısı bağlantısı gerekir.
 - KAP/MKK: otomatik bildirim ve finansal dosya erişimi için MKK API Portal uygulaması, API anahtarı ve ilgili veri ürünü yetkisi gerekir.
-- TCMB EVDS ve FRED: API anahtarı gerekir.
+- TCMB EVDS 3 ve FRED: API anahtarı gerekir. EVDS3 veri kataloğu BIST, kıymetli maden, TLREF/repo ve DİBS seri gruplarını arayıp seçmek için terminalde sunulmuştur.
 - CoinGecko: API kotası ve ticari kullanım koşulları plana göre değişir.
 - World Bank Pink Sheet: aylık benchmark serisidir; gün içi spot/futures fiyatı değildir.
 
@@ -55,7 +55,7 @@ API dokümantasyonu:
 Canlı veri için .env içindeki isteğe bağlı anahtarları yapılandır:
 - AKCA_SEC_USER_AGENT: gerçek bir iletişim e-postası içermeli.
 - FRED_API_KEY: ABD makro serileri ve reel USD enflasyon ayarı.
-- TCMB_EVDS_API_KEY: Türkiye makro/FX, BIST endeks ve tahvil serileri. Varsayılan servis belgelenmiş EVDS 2 REST uyumluluk endpoint'idir; EVDS 3 katalog kodları terminalden girilir.
+- TCMB_EVDS_API_KEY: Türkiye makro/FX, BIST endeks, kıymetli maden ve tahvil serileri. Varsayılan bağlantı EVDS 3 beta REST kataloğudur; veri grupları ve seri kodları terminalden aranıp seçilir.
 - COINGECKO_DEMO_API_KEY: CoinGecko API kotası için.
 - AKCA_API_KEY betik tarafından yerelde oluşturulur; bunu GitHub'a, terminal ekran görüntüsüne veya herkese açık bir web sayfasına koyma.
 
