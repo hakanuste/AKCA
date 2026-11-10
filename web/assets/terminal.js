@@ -240,10 +240,13 @@ async function loadMacro(){
     if(!host.children.length)host.append(el("div","empty","FRED serisi dönmedi."));
   }catch(e){showError("#macro-error",e);}
 }
-$("#evds-load").addEventListener("click",async()=>{
+$("#evds-form").addEventListener("submit",async e=>{
+  e.preventDefault();
   clearError("#macro-error");const host=$("#evds-results");host.replaceChildren();
   try{
-    const d=await api("/api/evds");
+    const codes=$("#evds-series").value.split(",").map(x=>x.trim()).filter(Boolean);
+    if(!codes.length)throw new Error("En az bir EVDS seri kodu girilmeli.");
+    const d=await api("/api/evds?series="+encodeURIComponent(codes.join(",")));
     if(d.status==="not_configured")host.append(el("div","notice","TCMB_EVDS_API_KEY tanımlı değil. EVDS hesabından ücretsiz API anahtarı alıp sunucu .env dosyasına ekle."));
     else (d.series||[]).forEach(s=>{const r=el("div","key-row");r.append(el("span","",s.name),el("strong","",(s.latest?fmt(s.latest.value):"—")+" · "+(s.latest?.date||"—")));host.append(r);});
     toggle("#evds-results",true);
