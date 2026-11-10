@@ -1,0 +1,18 @@
+services:
+  akca:
+    build: .
+    container_name: akca
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      AKCA_DB_PATH: /data/akca.db
+      AKCA_API_HOST: 0.0.0.0
+      AKCA_API_PORT: 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - akca_data:/data
+
+volumes:
+  akca_data:
