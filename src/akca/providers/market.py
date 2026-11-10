@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from math import isfinite
 from typing import Any
 
 import yfinance as yf
@@ -106,7 +106,7 @@ def fetch_quote(symbol: str, period: str = "6mo", name: str | None = None) -> di
 def _number(value: Any) -> float | None:
     try:
         value = float(value)
-        return value if value == value and abs(value) != float("inf") else None
+        return value if isfinite(value) else None
     except (TypeError, ValueError):
         return None
 
