@@ -23,13 +23,16 @@ def add_broker_research(
         """
         INSERT INTO broker_research(
             symbol,institution,analyst,recommendation,target_price,currency,
-            published_at,report_url,source_name,dependency_group,verified,notes
-        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+            published_at,report_url,source_name,dependency_group,verified,notes,
+            reference_price_at_publication,horizon_days
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         (
             symbol.strip().upper(), institution.strip(), analyst, rating, target_price,
             currency.upper() if currency else None, published_at, report_url,
             source_name, dependency_group, int(verified), notes,
+            reference_price_at_publication,
+            365,
         ),
     )
     research_id = cur.lastrowid
