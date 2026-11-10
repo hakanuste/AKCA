@@ -110,6 +110,114 @@ CREATE TABLE IF NOT EXISTS index_runs (
     notes TEXT,
     calculated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS market_cache (
+    cache_key TEXT PRIMARY KEY,
+    payload_json TEXT NOT NULL,
+    source TEXT NOT NULL,
+    retrieved_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS company_profiles (
+    symbol TEXT PRIMARY KEY,
+    company_name TEXT,
+    exchange TEXT,
+    currency TEXT,
+    country TEXT,
+    sector TEXT,
+    industry TEXT,
+    website TEXT,
+    market_cap REAL,
+    shares_outstanding REAL,
+    last_price REAL,
+    price_timestamp TEXT,
+    source TEXT NOT NULL,
+    source_url TEXT,
+    retrieved_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS financial_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol TEXT NOT NULL,
+    metric_code TEXT NOT NULL,
+    period_end TEXT NOT NULL,
+    period_type TEXT NOT NULL,
+    value REAL NOT NULL,
+    currency TEXT,
+    unit TEXT,
+    source TEXT NOT NULL,
+    source_url TEXT,
+    retrieved_at TEXT NOT NULL,
+    UNIQUE(symbol, metric_code, period_end, period_type, source)
+);
+CREATE INDEX IF NOT EXISTS idx_financial_snapshot_symbol_period
+    ON financial_snapshots(symbol, period_end, metric_code);
+CREATE TABLE IF NOT EXISTS price_history (
+    symbol TEXT NOT NULL,
+    trade_date TEXT NOT NULL,
+    open REAL,
+    high REAL,
+    low REAL,
+    close REAL NOT NULL,
+    adjusted_close REAL,
+    volume REAL,
+    currency TEXT,
+    source TEXT NOT NULL,
+    retrieved_at TEXT NOT NULL,
+    PRIMARY KEY(symbol, trade_date, source)
+);
+CREATE INDEX IF NOT EXISTS idx_price_history_symbol_date
+    ON price_history(symbol, trade_date);
+CREATE TABLE IF NOT EXISTS research_reports (
+    report_id TEXT PRIMARY KEY,
+    symbol TEXT NOT NULL,
+    as_of TEXT NOT NULL,
+    recommendation TEXT NOT NULL,
+    confidence REAL,
+    data_completeness REAL NOT NULL,
+    risk_flags_json TEXT NOT NULL,
+    report_json TEXT NOT NULL,
+    methodology_version TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS watchlist (
+    symbol TEXT PRIMARY KEY,
+    added_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
+);
+CREATE TABLE IF NOT EXISTS broker_research (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol TEXT NOT NULL,
+    institution TEXT NOT NULL,
+    analyst TEXT,
+    recommendation TEXT,
+    target_price REAL,
+    currency TEXT,
+    published_at TEXT NOT NULL,
+    report_url TEXT NOT NULL,
+    source_name TEXT NOT NULL,
+    dependency_group TEXT,
+    verified INTEGER NOT NULL DEFAULT 0,
+    notes TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_broker_research_symbol_date
+    ON broker_research(symbol, published_at);
+CREATE TABLE IF NOT EXISTS portfolios (
+    portfolio_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    base_currency TEXT NOT NULL DEFAULT 'TRY',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS portfolio_positions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    portfolio_id TEXT NOT NULL REFERENCES portfolios(portfolio_id) ON DELETE CASCADE,
+    symbol TEXT NOT NULL,
+    quantity REAL NOT NULL CHECK(quantity >= 0),
+    average_cost REAL,
+    cost_currency TEXT,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(portfolio_id, symbol)
+);
+
 """
 
 def connect(db_path: Path | str | None = None) -> sqlite3.Connection:
