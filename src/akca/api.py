@@ -17,7 +17,7 @@ from .analysis.engine import run_company_research
 from .analysis.institutional import (
     add_broker_research, add_forecast_outcome, broker_consensus,
 )
-from .analysis.ipo import add_ipo, ipo_performance
+from .analysis.ipo import add_ipo, ipo_performance, recent_ipos
 from .analysis.portfolio import analyze_portfolio
 from .analysis.screener import screen_symbols
 from .config import API_KEY, CORS_ORIGINS, ROOT
@@ -560,6 +560,13 @@ def create_ipo(payload: IPOCreate):
         return {"symbol": payload.symbol.upper(), "saved": True}
     except (ValueError, KeyError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.get("/api/ipos/recent")
+def recent_ipo_list(
+    days: int = Query(default=730, ge=1, le=3650),
+    limit: int = Query(default=50, ge=1, le=100),
+):
+    return recent_ipos(days=days, max_items=limit)
 
 @app.get("/api/ipo/{symbol}")
 def ipo_result(symbol: str):
