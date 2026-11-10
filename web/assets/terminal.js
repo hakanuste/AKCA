@@ -315,6 +315,21 @@ $("#broker-consensus-form").addEventListener("submit",async e=>{
   }catch(e){showError("#broker-error",e);}
 });
 
+$("#ipo-list-load").addEventListener("click",async()=>{
+  clearError("#ipo-error");
+  try{
+    const data=await api("/api/ipos/recent?days=730&limit=100");
+    const host=$("#ipo-list");host.replaceChildren();
+    if(!data.ipos?.length){
+      host.append(el("div","empty","Bu ilk sürümün kayıtlarında henüz son iki yıla ait halka arz kaydı yok. Otomatik tam piyasa listesi KAP/MKK ve borsa verisi bağlantısı gerektirir."));
+    }else{
+      table(host,["Sembol","Şirket","Arz tarihi","Arz fiyatı","Para birimi","Kaynak doğrulandı"],
+        data.ipos.map(x=>[x.symbol,x.company_name,x.offer_date,fmt(x.offer_price),x.offer_currency,x.verified?"Evet":"Hayır"]));
+    }
+    host.append(el("div","notice",data.note||""));
+    toggle("#ipo-list",true);
+  }catch(e){showError("#ipo-error",e);}
+});
 $("#ipo-form").addEventListener("submit",async e=>{
   e.preventDefault();clearError("#ipo-error");
   try{
@@ -325,6 +340,32 @@ $("#ipo-form").addEventListener("submit",async e=>{
     })});
     toast("Halka arz kaydı eklendi.");$("#ipo-query-symbol").value=$("#ipo-symbol").value;
   }catch(e){showError("#ipo-error",e);}
+});
+$("#dollar-performance-load").addEventListener("click",async()=>{
+  const symbol=$("#company-symbol").value.trim().toUpperCase();
+  const host=$("#dollar-performance-results");host.replaceChildren();
+  try{
+    host.append(el("div","loading","USD bazlı fiyat ve FX serileri hesaplanıyor…"));
+    toggle("#dollar-performance-results",true);
+    const data=await api("/api/analysis/dollar-performance/"+encodeURIComponent(symbol));
+    host.replaceChildren();
+    host.append(el("h3","",symbol+" · USD bazlı performans"));
+    rows(host,[
+      ["Son USD fiyat",money(data.last_usd_price,"USD")],
+      ["Veri tarihi",data.as_of],
+      ["1 ay nominal USD",pct(data.nominal_usd_returns_pct?.["1m"])],
+      ["3 ay nominal USD",pct(data.nominal_usd_returns_pct?.["3m"])],
+      ["6 ay nominal USD",pct(data.nominal_usd_returns_pct?.["6m"])],
+      ["1 yıl nominal USD",pct(data.nominal_usd_returns_pct?.["1y"])],
+      ["3 yıl nominal USD",pct(data.nominal_usd_returns_pct?.["3y"])],
+      ["5 yıl nominal USD",pct(data.nominal_usd_returns_pct?.["5y"])],
+      ["1 yıl reel USD",pct(data.real_usd_returns_pct?.["1y"])],
+      ["Tarihsel USD yüksek",money(data.historical_usd_high,"USD")],
+      ["Tarihsel USD düşük",money(data.historical_usd_low,"USD")]
+    ]);
+    host.append(el("div","notice",data.fx_method||""));
+    (data.warnings||[]).forEach(w=>host.append(el("div","notice",w)));
+  }catch(e){showError("#company-error",e);}
 });
 $("#ipo-query-form").addEventListener("submit",async e=>{
   e.preventDefault();clearError("#ipo-error");const sym=$("#ipo-query-symbol").value.trim().toUpperCase();
