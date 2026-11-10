@@ -68,7 +68,19 @@ def analyze_fundamentals(sec_facts: dict | None, yahoo_data: dict | None) -> dic
     op_cash = metrics["operating_cash_flow"]["latest"]
     capex = metrics["capex"]["latest"]
     assets = metrics["total_assets"]["latest"]
+    prior_assets = metrics["total_assets"]["previous"]
     equity = metrics["equity"]["latest"]
+    prior_equity = metrics["equity"]["previous"]
+    average_assets = (
+        (assets + prior_assets) / 2
+        if assets is not None and prior_assets is not None
+        else assets
+    )
+    average_equity = (
+        (equity + prior_equity) / 2
+        if equity is not None and prior_equity is not None
+        else equity
+    )
     liabilities = metrics["total_liabilities"]["latest"]
     cash = metrics["cash"]["latest"]
     debt = metrics["long_term_debt"]["latest"]
@@ -82,8 +94,10 @@ def analyze_fundamentals(sec_facts: dict | None, yahoo_data: dict | None) -> dic
     derived = {
         "revenue_growth_yoy_pct": revenue_growth,
         "net_margin_pct": _safe_div(net_income, revenue) * 100 if _safe_div(net_income, revenue) is not None else None,
-        "return_on_assets_pct": _safe_div(net_income, assets) * 100 if _safe_div(net_income, assets) is not None else None,
-        "return_on_equity_pct": _safe_div(net_income, equity) * 100 if _safe_div(net_income, equity) is not None else None,
+        "return_on_assets_pct": _safe_div(net_income, average_assets) * 100 if _safe_div(net_income, average_assets) is not None else None,
+        "return_on_equity_pct": _safe_div(net_income, average_equity) * 100 if _safe_div(net_income, average_equity) is not None else None,
+        "return_on_assets_balance_basis": "average_opening_closing_assets" if prior_assets is not None else "closing_assets_only",
+        "return_on_equity_balance_basis": "average_opening_closing_equity" if prior_equity is not None else "closing_equity_only",
         "debt_to_equity": _safe_div(debt, equity),
         "liabilities_to_assets": _safe_div(liabilities, assets),
         "cash_to_debt": _safe_div(cash, debt),
