@@ -45,6 +45,7 @@ def build_company_checklist(report: dict, broker_records_count: int = 0) -> list
     completeness = report.get("completeness", {})
     price_history_ok = technical.get("observations", 0) >= 200
     sec_filings = bool(filings)
+    is_bist = report.get("market_region") == "BIST"
     has_company_financials = bool(metrics.get("revenue", {}).get("latest") is not None)
     has_current_price = profile.get("current_price") is not None
     has_valuation = any(
@@ -64,11 +65,11 @@ def build_company_checklist(report: dict, broker_records_count: int = 0) -> list
         "manual_required",
         "complete" if broker_records_count else "manual_required",
         "complete" if broker_records_count else "manual_required",
-        "complete" if sec_filings else "manual_required",
-        "partial" if sec_filings else "manual_required",
+        "manual_required" if is_bist else ("complete" if sec_filings else "manual_required"),
+        "manual_required" if is_bist else ("partial" if sec_filings else "manual_required"),
         "manual_required",
         "manual_required",
-        "partial" if sec_filings else "manual_required",
+        "manual_required" if is_bist else ("partial" if sec_filings else "manual_required"),
         "manual_required",
         "manual_required",
         "partial" if sec_filings else "manual_required",
