@@ -27,6 +27,9 @@ from .ingest import add_variant, import_items
 from .pricing import PriceObservation, add_observation, set_observation_status
 from .providers.coingecko import fetch_coin, search_coin
 from .providers.fred import fetch_macro
+from .providers.evds import fetch_evds
+from .providers.market import fetch_market_group
+from .providers.worldbank import fetch_commodity_history
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -211,6 +214,111 @@ def dollar_performance_route(symbol: str):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Döviz/fiyat verisi alınamadı: {type(exc).__name__}: {str(exc)[:220]}") from exc
+
+@app.get("/api/markets")
+def markets(
+    group: str = Query(default="all", pattern=r"^(all|indices|fx|commodities)$"),
+    period: str = Query(default="6mo", pattern=r"^(1mo|3mo|6mo|1y|2y|5y|10y|max)$"),
+):
+    try:
+        return fetch_market_group(group, period)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.get("/api/commodities/world-bank")
+def world_bank_commodities(
+    q: str | None = Query(default=None, max_length=100),
+    limit: int = Query(default=60, ge=1, le=240),
+):
+    try:
+        return fetch_commodity_history(q, limit)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"World Bank emtia verisi alınamadı: {type(exc).__name__}: {str(exc)[:250]}",
+        ) from exc
+
+@app.get("/api/evds")
+def evds_data(
+    series: str | None = Query(default=None, max_length=1000),
+    start: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    end: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+):
+    from datetime import date
+    try:
+        codes = [x.strip() for x in series.split(",") if x.strip()] if series else None
+        return fetch_evds(
+            codes,
+            date.fromisoformat(start) if start else None,
+            date.fromisoformat(end) if end else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"TCMB EVDS veri hatası: {type(exc).__name__}: {str(exc)[:250]}") from exc
+
+@app.get("/api/sources")
+def source_registry():
+    return {
+        "sources": [
+            {
+                "id": "bist_licensed_vendor",
+                "name": "Borsa İstanbul lisanslı veri dağıtıcıları",
+                "status": "configuration_required",
+                "source_url": "https://www.borsaistanbul.com/en/data/data-dissemination/data-vendors-directory",
+                "note": "Gerçek zamanlı/gecikmeli ve tarihsel BIST verileri uygun lisanslı dağıtıcıdan alınmalıdır.",
+            },
+            {
+                "id": "mkk_kap_api",
+                "name": "MKK API Portal / KAP Veri Yayın Servisleri",
+                "status": "developer_account_and_api_product_required",
+                "source_url": "https://apiportal.mkk.com.tr/",
+                "note": "API anahtarı ve ilgili KAP veri ürününe erişim başvurusu gerekir.",
+            },
+            {
+                "id": "yahoo_finance",
+                "name": "Yahoo Finance via yfinance",
+                "status": "unofficial_public_data",
+                "source_url": "https://finance.yahoo.com/",
+                "note": "Araştırma ve gösterge amaçlıdır; lisanslı gerçek zamanlı BIST beslemesi değildir.",
+            },
+            {
+                "id": "sec_edgar",
+                "name": "SEC EDGAR",
+                "status": "public_api",
+                "source_url": "https://www.sec.gov/edgar/sec-api-documentation",
+                "note": "ABD bildirimcileri; tüm dünya şirketleri için kapsama sağlamaz.",
+            },
+            {
+                "id": "tcmb_evds",
+                "name": "TCMB EVDS 3",
+                "status": "configured" if __import__("os").getenv("TCMB_EVDS_API_KEY") else "api_key_required",
+                "source_url": "https://evds3.tcmb.gov.tr/",
+                "note": "Ücretsiz API anahtarı gerekir; seri kodu ve sıklık kontrol edilmelidir.",
+            },
+            {
+                "id": "world_bank_pink_sheet",
+                "name": "World Bank Commodity Markets Pink Sheet",
+                "status": "public_monthly_dataset",
+                "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+                "note": "Aylık emtia benchmark verisi; intraday fiyat değildir. CC BY 4.0 atfı uygulanır.",
+            },
+            {
+                "id": "coingecko",
+                "name": "CoinGecko",
+                "status": "demo_key_recommended",
+                "source_url": "https://docs.coingecko.com/",
+                "note": "API kotası ve yeniden dağıtım lisansı kontrol edilmelidir.",
+            },
+            {
+                "id": "fred",
+                "name": "Federal Reserve FRED",
+                "status": "configured" if __import__("os").getenv("FRED_API_KEY") else "api_key_required",
+                "source_url": "https://fred.stlouisfed.org/docs/api/fred/",
+                "note": "Makro seriler için API anahtarı gerekir.",
+            },
+        ]
+    }
 
 @app.get("/api/macro")
 def macro_data(
