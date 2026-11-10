@@ -8,7 +8,7 @@ Bu kayıt, kodda kullanılan veya planlanan dış veri kaynaklarını birbirinde
 | SEC EDGAR | ABD bildirimleri, XBRL temel finansallar, 10-K/10-Q/8-K | Ücretsiz açık API; API key gerekmez; tanımlayıcı ve gerçek iletişim e-postalı User-Agent zorunlu | Yalnızca EDGAR bildirimcilerini kapsar. XBRL etiketleri şirketler arasında aynı anlama gelmeyebilir. Fair-access isteği sınırına uyulmalı. | Kod adaptörü var; gerçek User-Agent yapılandırılmalı |
 | Borsa İstanbul veri dağıtıcıları | BIST hisse, endeks ve işlem verisi | Borsa İstanbul lisansı ve yetkili veri dağıtıcısı sözleşmesi gerekir | Ücretsiz web ekranındaki gecikmeli bilgi, gerçek zamanlı/tarihsel veri indirme veya yeniden dağıtım hakkı değildir. | Henüz lisanslı sağlayıcı adaptörü yapılandırılmadı |
 | KAP / MKK API Portal | BIST ihraççı bildirimleri, finansallar, kurumsal aksiyonlar | MKK API Portal uygulama kaydı, anahtar ve ilgili veri ürünü erişimi gerekir | İlgili API ürününe erişim olmadan otomatik veri çekildiği iddia edilmez. | Entegrasyon noktası ve kaynak kaydı mevcut; gerçek kimlik bilgisi/ürün izni bekleniyor |
-| TCMB EVDS 3 | Türkiye döviz, faiz ve makro serileri | EVDS hesabı ve API anahtarı; HTTP header adı key | Seri kodu, frekans, birim, metodoloji ve beta servis davranışı metadata ile doğrulanmalı. | Adaptör var; TCMB_EVDS_API_KEY kullanıcı sunucusunda ayarlanmalı |
+| TCMB EVDS 3 | Türkiye döviz, BIST endeks/hacim, kıymetli maden, TLREF/repo, DİBS ve makro serileri | EVDS hesabı ve API anahtarı; varsayılan HTTP header key, yetkilendirme reddinde x-auth-token denemesi | EVDS 3 beta REST yolu kullanılır. Seri kodu, birim, frekans ve metodoloji canlı katalog metadata'sıyla doğrulanmalı. | EVDS3 REST ve katalog adaptörü var; TCMB_EVDS_API_KEY kullanıcı sunucusunda ayarlanmalı |
 | FRED | ABD faiz, tahvil, enflasyon, işsizlik ve makro seriler | Ücretsiz API anahtarı | Serilerin yayımlanma frekansı ve revizyon politikası farklıdır. | Adaptör var; FRED_API_KEY gerekli |
 | World Bank Pink Sheet | Aylık uluslararası emtia benchmark serileri | Herkese açık aylık XLSX indirme | Gün içi/spot fiyat değildir. Seri birimi ve benchmark Excel'in açıklama sayfasından alınmalı; CC BY 4.0 atfı korunmalı. | Adaptör var; workbook şema kontrolü canlı testte izlenmeli |
 | CoinGecko | Kripto varlık keşfi, fiyat, piyasa değeri, dönemsel değişimler | Public API; Demo key tavsiye edilir | Kotalar, planlar, yeniden dağıtım ve ticari kullanım şartları kontrol edilmeli. | Adaptör var; Demo key isteğe bağlı |
@@ -28,6 +28,6 @@ Bu kayıt, kodda kullanılan veya planlanan dış veri kaynaklarını birbirinde
 - BIST/KAP otomatik şirket finansalları ve açıklama taraması: MKK API Portal uygulama/ürün yetkisi gerekir.
 - Resmî ve yeniden dağıtılabilir BIST fiyatları: yetkili veri dağıtıcısı sözleşmesi ve anahtar gerekir.
 - FRED reel USD ve ABD makro karşılaştırmaları: FRED API key gerekir.
-- TCMB EVDS Türkiye makro/FX: EVDS API key gerekir.
+- TCMB EVDS Türkiye makro, BIST endeks/hacim, kıymetli maden ve DİBS/TLREF: EVDS API key gerekir; EVDS3 katalog kodu seçilmelidir.
 - CoinGecko kotalarının istikrarlı kullanımı: Demo veya uygun ücretli API anahtarı gerekir.
 - Aracı kurum araştırmaları: rapor URL'leri, kullanıcı tarafından temin edilen veya lisanslı erişilen araştırma belgeleri gerekir. Konsensüs yalnızca doğrulanmış raporlardan hesaplanır.
