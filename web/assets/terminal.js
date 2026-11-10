@@ -162,10 +162,11 @@ $("#screener-form").addEventListener("submit",async e=>{
   e.preventDefault();clearError("#screener-error");loading("#screener-loading",true);toggle("#screener-results",true);
   try{
     const d=await api("/api/screener?symbols="+encodeURIComponent($("#screen-symbols").value.trim()));
-    table("#screener-results",["Sembol","Şirket","Fiyat","F/K","Gelir büy.","ROE","Borç/Özsermaye","FCF verimi","Trend","Aksiyon","Veri"],
-      (d.results||[]).map(x=>[x.symbol,x.company_name,money(x.price,x.currency),fmt(x.trailing_pe),pct(x.revenue_growth_yoy_pct),pct(x.return_on_equity_pct),fmt(x.debt_to_equity),pct(x.free_cash_flow_yield_pct),x.trend||"—",x.recommendation,pct(x.data_completeness_pct)]));
+    table("#screener-results",["Sembol","Şirket","Fiyat","Değer puanı*","Kapsam","F/K","Gelir büy.","ROE","Borç/Özsermaye","FCF verimi","Trend","Aksiyon"],
+      (d.results||[]).map(x=>[x.symbol,x.company_name,money(x.price,x.currency),fmt(x.provisional_value_score,1),pct(x.score_coverage_pct),fmt(x.trailing_pe),pct(x.revenue_growth_yoy_pct),pct(x.return_on_equity_pct),fmt(x.debt_to_equity),pct(x.free_cash_flow_yield_pct),x.trend||"—",x.recommendation]));
     (d.errors||[]).forEach(x=>$("#screener-results").append(el("div","gaps",x.symbol+": "+x.error)));
-    $("#screener-results").append(el("div","notice",d.ranking_note||""));
+    $("#screener-results").append(el("div","notice","* Değer puanı ön tarama metriğidir; model ağırlıkları henüz geriye dönük testle kalibre edilmedi. Kapsam %70'in altındaysa puan sıralama için yeterli kabul edilmez. Sektörler arası kıyas doğrudan yatırım sinyali değildir."));
+    if(d.methodology?.note)$("#screener-results").append(el("div","notice",d.methodology.note));
   }catch(e){showError("#screener-error",e);}finally{loading("#screener-loading",false);}
 });
 
