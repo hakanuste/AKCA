@@ -15,8 +15,11 @@ def test_mass_and_volume_normalization():
     price, unit = normalize_price(60, 0, 500, "g")
     assert price == pytest.approx(120)
     assert unit == "kg"
+    # Shipping is stored separately and must not inflate the product unit price.
+    shipped_price, _ = normalize_price(60, 25, 500, "g")
+    assert shipped_price == pytest.approx(120)
     price, unit = normalize_price(75, 5, 750, "ml")
-    assert price == pytest.approx(106.6666667)
+    assert price == pytest.approx(100)
     assert unit == "l"
 
 def test_unknown_unit_is_rejected():
