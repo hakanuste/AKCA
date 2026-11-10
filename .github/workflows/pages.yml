@@ -1,4 +1,4 @@
-name: Deploy AKÇA introduction site
+name: Deploy AKÇA website
 
 on:
   push:
@@ -9,36 +9,35 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: "pages"
+  group: "akca-pages"
   cancel-in-progress: true
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - name: Upload website artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "./web"
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Prepare static website
+        run: |
+          mkdir -p _site
+          cp -R web/. _site/
+          touch _site/.nojekyll
+          test -s _site/index.html
+          test -s _site/terminal.html
+      - name: Publish gh-pages branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          git -C _site init
+          git -C _site config user.name "github-actions[bot]"
+          git -C _site config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C _site add --all
+          git -C _site commit -m "Publish AKÇA website from ${GITHUB_SHA}"
+          git -C _site branch -M gh-pages
+          git -C _site remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPOSITORY}.git"
+          git -C _site push --force origin gh-pages
