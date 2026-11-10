@@ -218,6 +218,52 @@ CREATE TABLE IF NOT EXISTS portfolio_positions (
     UNIQUE(portfolio_id, symbol)
 );
 
+
+CREATE TABLE IF NOT EXISTS source_registry (
+    source_id TEXT PRIMARY KEY,
+    source_name TEXT NOT NULL,
+    source_category TEXT NOT NULL,
+    access_type TEXT NOT NULL,
+    license_status TEXT NOT NULL,
+    terms_url TEXT,
+    attribution TEXT,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    checked_at TEXT,
+    notes TEXT
+);
+CREATE TABLE IF NOT EXISTS broker_forecast_outcomes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    broker_research_id INTEGER NOT NULL REFERENCES broker_research(id) ON DELETE CASCADE,
+    evaluation_date TEXT NOT NULL,
+    reference_price REAL NOT NULL,
+    actual_price REAL NOT NULL,
+    target_price_error_pct REAL,
+    realized_return_pct REAL,
+    notes TEXT,
+    UNIQUE(broker_research_id, evaluation_date)
+);
+CREATE TABLE IF NOT EXISTS ipo_records (
+    symbol TEXT PRIMARY KEY,
+    company_name TEXT NOT NULL,
+    offer_date TEXT NOT NULL,
+    offer_price REAL NOT NULL CHECK(offer_price > 0),
+    offer_currency TEXT NOT NULL,
+    shares_offered REAL,
+    source_url TEXT NOT NULL,
+    source_name TEXT NOT NULL,
+    verified INTEGER NOT NULL DEFAULT 0,
+    notes TEXT
+);
+CREATE TABLE IF NOT EXISTS audit_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_at TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    action TEXT NOT NULL,
+    object_type TEXT NOT NULL,
+    object_id TEXT,
+    detail_json TEXT
+);
+
 """
 
 def connect(db_path: Path | str | None = None) -> sqlite3.Connection:
