@@ -33,7 +33,11 @@ def analyze_portfolio(positions: list[dict], base_currency: str = "USD") -> dict
         })
     priced = [r for r in rows if r.get("status") == "priced"]
     currencies = {r.get("currency") for r in priced if r.get("currency")}
-    same_currency = len(currencies) == 1 and all(r.get("currency") for r in priced)
+    same_currency = (
+        len(currencies) == 1
+        and all(r.get("currency") for r in priced)
+        and len(priced) == len(positions)
+    )
     if same_currency and total_value > 0:
         for row in rows:
             row["weight_pct"] = (
@@ -50,6 +54,14 @@ def analyze_portfolio(positions: list[dict], base_currency: str = "USD") -> dict
     warnings = []
     if len(currencies) > 1:
         warnings.append("Birden fazla para birimi bulundu. FX dönüşümü yapılmadı; toplam piyasa değeri karşılaştırılabilir değildir.")
+    elif priced and not same_currency:
+        warnings.append("En az bir pozisyonun fiyatı veya para birimi eksik. Portföy ağırlıkları ve konsantrasyonu hesaplanmadı.")
+    if currencies == {base_currency.upper()}:
+        pass
+    elif same_currency:
+        warnings.append(
+            f"Pozisyonlar {next(iter(currencies))} cinsinden hesaplandı; istenen baz para birimi {base_currency.upper()} olduğu halde FX dönüşümü yapılmadı."
+        )
     weights_sum = sum((r.get("weight_pct") or 0) for r in priced)
     if len(priced) < len(positions):
         warnings.append("Bazı pozisyonların fiyatı alınamadığından portföy kapsamı eksik.")
