@@ -292,6 +292,68 @@ async function loadMacro(){
     if(!host.children.length)host.append(el("div","empty","FRED serisi dönmedi."));
   }catch(e){showError("#macro-error",e);}
 }
+
+$("#evds-catalogue-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  clearError("#macro-error");
+  const host = $("#evds-catalogue-results");
+  host.replaceChildren();
+  try {
+    const kind = $("#evds-catalogue-kind").value;
+    const code = $("#evds-catalogue-code").value.trim();
+    const query = $("#evds-catalogue-query").value.trim();
+    if (kind === "series" && !code) {
+      throw new Error("Seri listesini açmak için veri grubu veya seri kodu gerekli.");
+    }
+    const params = new URLSearchParams({kind});
+    if (code) params.set("code", code);
+    if (query) params.set("q", query);
+    const data = await api("/api/evds/catalogue?" + params.toString());
+    if (data.status === "not_configured") {
+      host.append(el("div","notice","TCMB_EVDS_API_KEY tanımlı değil. API anahtarını sunucudaki .env dosyasına ekle."));
+    } else {
+      const entries = data.items || [];
+      if (!entries.length) {
+        host.append(el("div","empty","Katalogda eşleşme yok. Önce veri gruplarını yükleyebilir, ardından bir grup koduyla serileri açabilirsin."));
+      }
+      entries.forEach(item => {
+        const row = el("div","evds-catalogue-item");
+        const raw = item && typeof item === "object" ? item : {value:item};
+        const pairs = Object.entries(raw);
+        const codeEntry = pairs.find(([key,value]) => /code|kod|id/i.test(key) && typeof value === "string");
+        const nameEntry = pairs.find(([key,value]) => /name|title|aciklama|description|seri|grup/i.test(key) && typeof value === "string");
+        const codeValue = codeEntry?.[1] || "";
+        row.append(
+          el("strong","",nameEntry?.[1] || String(codeValue || JSON.stringify(item))),
+          el("small","",codeValue ? "KOD · " + codeValue : JSON.stringify(item))
+        );
+        if (codeValue) {
+          const action = el("button","inline-action",kind === "datagroups" ? "Serilerini aç" : "Koda ekle");
+          action.type = "button";
+          action.addEventListener("click", () => {
+            if (kind === "datagroups") {
+              $("#evds-catalogue-kind").value = "series";
+              $("#evds-catalogue-code").value = codeValue;
+              toast("Veri grubu seçildi. Serileri görmek için Kataloğu Aç.");
+            } else {
+              const input = $("#evds-series");
+              const current = input.value.split(",").map(x => x.trim()).filter(Boolean);
+              if (!current.includes(codeValue)) current.push(codeValue);
+              input.value = current.join(",");
+              toast("Seri kodu sorgu alanına eklendi.");
+            }
+          });
+          row.append(action);
+        }
+        host.append(row);
+      });
+    }
+    toggle("#evds-catalogue-results", true);
+  } catch(error) {
+    showError("#macro-error", error);
+  }
+});
+
 $("#evds-form").addEventListener("submit",async e=>{
   e.preventDefault();
   clearError("#macro-error");const host=$("#evds-results");host.replaceChildren();
