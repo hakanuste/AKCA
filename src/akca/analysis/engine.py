@@ -11,6 +11,8 @@ from ..providers.sec import fetch_company
 from ..providers.yahoo import fetch_equity
 from .fundamentals import analyze_fundamentals
 from .technical import analyze_price_history
+from .checklist import build_company_checklist
+from .institutional import broker_consensus
 
 METHODOLOGY_VERSION = "akca-research-0.2.0"
 
@@ -149,6 +151,10 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
         warnings.extend(f"{key} provider error: {value}" for key, value in errors.items())
     if sec.get("available") is False:
         warnings.append(sec.get("reason", "SEC fundamentals not available for this symbol."))
+    try:
+        consensus = broker_consensus(symbol)
+    except Exception:
+        consensus = {"independent_verified_record_count": 0, "recommendation_distribution": {"buy": 0, "hold": 0, "sell": 0}, "equal_weight_target_price": {"count": 0, "mean": None, "median": None}, "accuracy_weighted_target_price": None}
     report = {
         "report_id": str(uuid4()),
         "symbol": symbol,
@@ -167,6 +173,8 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
             ) if item
         ],
         "filings": sec.get("recent_filings", []),
+        "institutional_consensus": consensus,
+        "price_history": history,
         "evidence_gaps": warnings + fundamentals.get("warnings", []),
         "completeness": {
             "market_price": profile.get("current_price") is not None,
@@ -183,6 +191,9 @@ def run_company_research(symbol: str, force_refresh: bool = False) -> dict:
     }
     values = list(report["completeness"].values())
     report["data_completeness_pct"] = round(sum(bool(v) for v in values) / len(values) * 100, 1)
+    report["company_research_checklist"] = build_company_checklist(
+        report, consensus.get("independent_verified_record_count", 0)
+    )
     _persist_market_data(report, market, sec)
     _persist_report(report)
     _cache_put(symbol, report)
