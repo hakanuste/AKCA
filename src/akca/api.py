@@ -28,7 +28,7 @@ from .ingest import add_variant, import_items
 from .pricing import PriceObservation, add_observation, set_observation_status
 from .providers.coingecko import fetch_coin, search_coin
 from .providers.fred import fetch_macro
-from .providers.evds import fetch_evds
+from .providers.evds import fetch_evds, fetch_evds_catalogue
 from .providers.market import fetch_market_group
 from .providers.worldbank import fetch_commodity_history
 
@@ -257,6 +257,28 @@ def world_bank_commodities(
             status_code=502,
             detail=f"World Bank emtia verisi alınamadı: {type(exc).__name__}: {str(exc)[:250]}",
         ) from exc
+
+
+@app.get("/api/evds/catalogue")
+def evds_catalogue(
+    kind: str = Query(default="datagroups", pattern=r"^(categories|datagroups|series)$"),
+    code: str | None = Query(default=None, max_length=200),
+    q: str | None = Query(default=None, max_length=120),
+):
+    try:
+        result = fetch_evds_catalogue(kind, code)
+        if q and result.get("items"):
+            term = q.casefold()
+            result["items"] = [
+                item for item in result["items"]
+                if term in str(item).casefold()
+            ]
+            result["filtered_by"] = q
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"EVDS katalog hatası: {type(exc).__name__}: {str(exc)[:250]}") from exc
 
 @app.get("/api/evds")
 def evds_data(
