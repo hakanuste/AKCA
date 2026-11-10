@@ -81,18 +81,14 @@
           </div>
           <form id="manual-financial-form" class="panel manual-import-panel">
             <div class="panel-head"><div><small>09 / BIST & ŞİRKET FİNANSAL BELGELERİ</small><h3>Kaynaklı finansal veri içe aktar</h3></div><span class="status">MANUEL İÇE AKTARIM</span></div>
-            <p class="muted">KAP veya şirketin resmî raporundaki yıllık/çeyreklik finansal kalemleri JSON olarak aktar. Kaynak adresi zorunludur. “Doğruladım” işaretlenmeden kayıtlar analizde kullanılmaz.</p>
+            <p class="muted">KAP veya şirketin resmî raporundaki finansal kalemleri JSON olarak aktar. Kaynak adresi zorunludur. “Doğruladım” işaretlenmeden kayıtlar analizde kullanılmaz. Çeyreklik kayıtlar saklanır; bu sürümün temel oranları doğrulanmış yıllık kayıtlardan hesaplanır.</p>
+            <p class="muted">metric_code seçenekleri: revenue, net_income, operating_cash_flow, capex, total_assets, total_liabilities, cash, long_term_debt, equity, operating_income, diluted_eps. Her satırda period_end (YYYY-AA-GG), period_type (annual/quarterly), value ve gerekirse currency/unit bulunmalıdır.</p>
             <div class="form-grid-inner">
               <label>Kaynak adı<input id="manual-source-name" value="KAP finansal bildirim" required></label>
               <label>Kaynak URL<input id="manual-source-url" type="url" placeholder="https://kap.org.tr/..." required></label>
             </div>
             <label class="manual-json-label">FİNANSAL VERİ SATIRLARI — JSON
-              <textarea id="manual-financial-json" rows="7" spellcheck="false" required>[
-  {"metric_code":"revenue","period_end":"2025-12-31","period_type":"annual","value":1000000,"currency":"TRY","unit":"TRY"},
-  {"metric_code":"net_income","period_end":"2025-12-31","period_type":"annual","value":100000,"currency":"TRY","unit":"TRY"},
-  {"metric_code":"total_assets","period_end":"2025-12-31","period_type":"annual","value":2500000,"currency":"TRY","unit":"TRY"},
-  {"metric_code":"equity","period_end":"2025-12-31","period_type":"annual","value":900000,"currency":"TRY","unit":"TRY"}
-]</textarea>
+              <textarea id="manual-financial-json" rows="7" spellcheck="false" required placeholder='[{"metric_code":"revenue","period_end":"2025-12-31","period_type":"annual","value":12345,"currency":"TRY","unit":"TRY"}]'>[]</textarea>
             </label>
             <label class="check-label"><input id="manual-financial-verified" type="checkbox"> Değerleri bağlantısını verdiğim resmî KAP/şirket belgesiyle karşılaştırıp doğruladım</label>
             <button class="button-primary" type="submit">FİNANSAL VERİLERİ AKTAR</button>
