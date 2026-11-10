@@ -273,4 +273,12 @@ def connect(db_path: Path | str | None = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    # Forward-only lightweight migrations for existing local databases.
+    broker_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(broker_research)").fetchall()
+    }
+    if "reference_price_at_publication" not in broker_columns:
+        conn.execute("ALTER TABLE broker_research ADD COLUMN reference_price_at_publication REAL")
+    if "horizon_days" not in broker_columns:
+        conn.execute("ALTER TABLE broker_research ADD COLUMN horizon_days INTEGER")
     return conn
