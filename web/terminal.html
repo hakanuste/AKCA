@@ -20,6 +20,8 @@
       <div class="side-label">ARAŞTIRMA</div>
       <button class="nav-item active" data-view="company">⌕ <span>Şirket analizi</span></button>
       <button class="nav-item" data-view="screener">◫ <span>Değer tarayıcı</span></button>
+      <button class="nav-item" data-view="markets">▥ <span>BIST & dünya piyasaları</span></button>
+      <button class="nav-item" data-view="commodities">◈ <span>Emtia piyasaları</span></button>
       <button class="nav-item" data-view="crypto">₿ <span>Kripto piyasası</span></button>
       <button class="nav-item" data-view="macro">⌁ <span>Makro göstergeler</span></button>
       <div class="side-label">PORTFÖY & ARAŞTIRMA</div>
@@ -40,11 +42,11 @@
           <div class="asof" id="report-asof">VERİ TARİHİ —</div>
         </div>
         <form id="company-form" class="searchbar">
-          <div class="search-field"><label for="company-symbol">HİSSE / SEMBOL</label><input id="company-symbol" value="AAPL" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Örn. AAPL veya GARAN.IS"></div>
+          <div class="search-field"><label for="company-symbol">HİSSE / SEMBOL</label><input id="company-symbol" value="AEFES.IS" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Örn. AEFES.IS, GARAN.IS veya AAPL"></div>
           <button class="button-primary" type="submit" id="analyze-button">ANALİZ ET <span>↗</span></button>
           <button class="button-quiet" type="button" id="refresh-button">Yenile</button>
         </form>
-        <div class="hint">Örnek semboller: AAPL, MSFT, NVDA, GARAN.IS, THYAO.IS. Fiyat verisi sağlayıcı kapsamına bağlıdır.</div>
+        <div class="hint">Örnek semboller: AEFES.IS, GARAN.IS, THYAO.IS, AAPL, MSFT. BIST sembollerinde .IS uzantısı kullan. Fiyat verisi sağlayıcı kapsamına bağlıdır.</div>
         <div id="company-loading" class="loading hidden">Veri sağlayıcıları sorgulanıyor; rapor hazırlanıyor…</div>
         <div id="company-error" class="error hidden"></div>
         <div id="company-report" class="hidden">
@@ -80,19 +82,38 @@
         <div class="notice">Bu ilk tarayıcı kullanıcının verdiği sembol listesini inceler. Henüz tüm dünya borsalarını kapsayan eksiksiz bir evren taraması değildir.</div>
       </section>
 
+      <section class="view" id="view-markets">
+        <div class="page-head"><div><div class="eyebrow">03 / BORSA İSTANBUL & KÜRESEL PİYASALAR</div><h1>BIST & dünya piyasaları</h1><p>BIST 100/30, ABD, Avrupa ve Asya endeksleri ile döviz piyasalarını tek ekranda izle. Veri kaynağı ve gecikme bilgisini dikkate al.</p></div></div>
+        <div class="market-controls"><button class="button-primary" id="markets-load">PİYASALARI GÜNCELLE ↗</button><span id="markets-asof" class="asof">VERİ TARİHİ —</span></div>
+        <div id="markets-error" class="error hidden"></div>
+        <div id="markets-loading" class="loading hidden">Piyasa verileri isteniyor…</div>
+        <div class="market-section"><h3>Hisse endeksleri</h3><div id="indices-grid" class="market-cards"></div></div>
+        <div class="market-section"><h3>Döviz ve dolar endeksi</h3><div id="fx-grid" class="market-cards"></div></div>
+        <div class="notice">BIST fiyatları bu ekranda yalnızca sağlayıcıdan erişilebilen gösterge/tarihsel verilerdir. Canlı veya yeniden dağıtılabilir BIST verisi için lisanslı veri sağlayıcısı bağlantısı gerekir.</div>
+      </section>
+
+      <section class="view" id="view-commodities">
+        <div class="page-head"><div><div class="eyebrow">04 / EMTİA & HAMMADDE</div><h1>Emtia piyasaları</h1><p>Altın, gümüş, bakır, petrol, doğalgaz ve tarımsal emtia vadeli işlemleri; ayrıca Dünya Bankası aylık benchmark fiyat serileri.</p></div></div>
+        <div class="market-controls"><button class="button-primary" id="commodities-live-load">VADELİ PİYASALARI GÜNCELLE ↗</button><button class="button-quiet" id="commodities-history-load">DÜNYA BANKASI AYLIK SERİLERİ</button></div>
+        <div id="commodities-error" class="error hidden"></div><div id="commodities-loading" class="loading hidden">Emtia serileri alınıyor…</div>
+        <div class="market-section"><h3>Vadeli işlem göstergeleri</h3><div id="commodities-live-grid" class="market-cards"></div></div>
+        <div class="panel hidden" id="commodities-history"><div class="panel-head"><div><small>WORLD BANK / PINK SHEET</small><h3>Aylık benchmark geçmişi (USD)</h3></div><span class="status">AYLIK VERİ</span></div><div id="commodities-history-content" class="table-wrap"></div></div>
+        <div class="notice">Futures sembolleri sürekli kontrat serileridir; vade geçişi/roll etkisi, spot fiyat ve yerel fiziki piyasa primiyle aynı şey değildir. Dünya Bankası serileri aylık benchmark niteliğindedir, gün içi fiyat değildir.</div>
+      </section>
+
       <section class="view" id="view-crypto">
-        <div class="page-head"><div><div class="eyebrow">03 / DİJİTAL VARLIKLAR</div><h1>Kripto piyasası</h1><p>CoinGecko üzerinden varlık arama, fiyat, piyasa değeri ve dönemsel performans.</p></div></div>
+        <div class="page-head"><div><div class="eyebrow">05 / DİJİTAL VARLIKLAR</div><h1>Kripto piyasası</h1><p>CoinGecko üzerinden varlık arama, fiyat, piyasa değeri ve dönemsel performans.</p></div></div>
         <form id="crypto-form" class="searchbar"><div class="search-field grow"><label for="crypto-query">VARLIK / SEMBOL</label><input id="crypto-query" value="bitcoin" placeholder="Bitcoin, Ethereum…"></div><button class="button-primary">ARA ↗</button></form>
         <div id="crypto-error" class="error hidden"></div><div id="crypto-results" class="crypto-results"></div><div id="crypto-detail" class="panel hidden"></div>
       </section>
 
       <section class="view" id="view-macro">
-        <div class="page-head"><div><div class="eyebrow">04 / MAKRO EKONOMİ</div><h1>Makro göstergeler</h1><p>Faiz, tahvil, enflasyon, işsizlik ve döviz serileri. FRED API anahtarı gerekir.</p></div></div>
-        <button class="button-primary" id="macro-load">MAKRO VERİLERİNİ GETİR ↗</button><div id="macro-error" class="error hidden"></div><div id="macro-results" class="metrics-grid"></div>
+        <div class="page-head"><div><div class="eyebrow">06 / MAKRO EKONOMİ</div><h1>Makro göstergeler</h1><p>TCMB EVDS ve ABD FRED verileri: döviz, faiz, enflasyon, tahvil, işsizlik ve makro seriler.</p></div></div>
+        <div class="market-controls"><button class="button-primary" id="macro-load">ABD MAKRO VERİLERİ ↗</button><button class="button-quiet" id="evds-load">TCMB EVDS VERİLERİ ↗</button></div><div id="macro-error" class="error hidden"></div><div id="macro-results" class="metrics-grid"></div><div id="evds-results" class="panel hidden"></div><div class="notice">FRED ve EVDS API anahtarları sunucu tarafındaki .env dosyasında tutulur. API anahtarı tarayıcıya gönderilmez.</div>
       </section>
 
       <section class="view" id="view-portfolio">
-        <div class="page-head"><div><div class="eyebrow">05 / SERMAYE KORUMA</div><h1>Portföy riski</h1><p>Yerel portföy kaydı, pozisyon büyüklüğü ve piyasa değeri yoğunlaşması.</p></div></div>
+        <div class="page-head"><div><div class="eyebrow">07 / SERMAYE KORUMA</div><h1>Portföy riski</h1><p>Yerel portföy kaydı, pozisyon büyüklüğü ve piyasa değeri yoğunlaşması.</p></div></div>
         <div class="form-grid">
           <form id="portfolio-create-form" class="panel form-panel"><h3>Portföy oluştur</h3><label>Portföy adı<input id="portfolio-name" value="Ana Portföy" required></label><label>Referans para birimi<input id="portfolio-currency" value="TRY" maxlength="3"></label><button class="button-primary">OLUŞTUR</button></form>
           <form id="position-form" class="panel form-panel"><h3>Pozisyon ekle</h3><label>Portföy<select id="portfolio-select" required></select></label><label>Sembol<input id="position-symbol" placeholder="GARAN.IS" required></label><label>Adet<input id="position-quantity" type="number" step="any" min="0.000001" required></label><label>Ortalama maliyet (isteğe bağlı)<input id="position-cost" type="number" step="any"></label><button class="button-primary">POZİSYON KAYDET</button></form>
@@ -101,7 +122,7 @@
       </section>
 
       <section class="view" id="view-institutional">
-        <div class="page-head"><div><div class="eyebrow">06 / SELL-SIDE RESEARCH</div><h1>Kurum araştırmaları</h1><p>Aracı kurum raporlarını kaynak URL, yayın tarihi ve bağımlılık grubu ile kaydet; hedef fiyat isabetini zaman içinde ölç.</p></div></div>
+        <div class="page-head"><div><div class="eyebrow">08 / SELL-SIDE RESEARCH</div><h1>Kurum araştırmaları</h1><p>Aracı kurum raporlarını kaynak URL, yayın tarihi ve bağımlılık grubu ile kaydet; hedef fiyat isabetini zaman içinde ölç.</p></div></div>
         <form id="broker-form" class="panel form-panel wide-form">
           <h3>Yeni kurum raporu kaydı</h3>
           <div class="form-grid-inner">
@@ -125,7 +146,7 @@
       </section>
 
       <section class="view" id="view-ipo">
-        <div class="page-head"><div><div class="eyebrow">07 / HALKA ARZ ARAŞTIRMASI</div><h1>Halka arz takip</h1><p>Halka arz fiyatı, kaynak ve güncel fiyatı karşılaştır. TL/dolar/reel getirinin eksik kapsamını açıkça işaretle.</p></div></div>
+        <div class="page-head"><div><div class="eyebrow">09 / HALKA ARZ ARAŞTIRMASI</div><h1>Halka arz takip</h1><p>Halka arz fiyatı, kaynak ve güncel fiyatı karşılaştır. TL/dolar/reel getirinin eksik kapsamını açıkça işaretle.</p></div></div>
         <form id="ipo-form" class="panel form-panel wide-form">
           <h3>Halka arz kaydı ekle</h3><div class="form-grid-inner">
             <label>Sembol<input id="ipo-symbol" required placeholder="THYAO.IS"></label>
@@ -141,7 +162,7 @@
       </section>
 
       <section class="view" id="view-inflation">
-        <div class="page-head"><div><div class="eyebrow">08 / DOĞRUDAN PİYASA FİYATLARI</div><h1>Bağımsız fiyat endeksi</h1><p>TÜİK 2022 sepetiyle satıcı bazlı aylık fiyat araştırması. Bu gösterge resmî TÜFE değildir.</p></div></div>
+        <div class="page-head"><div><div class="eyebrow">10 / DOĞRUDAN PİYASA FİYATLARI</div><h1>Bağımsız fiyat endeksi</h1><p>TÜİK 2022 sepetiyle satıcı bazlı aylık fiyat araştırması. Bu gösterge resmî TÜFE değildir.</p></div></div>
         <div class="metrics-grid"><div class="metric"><span>REFERANS MADDE</span><strong id="basket-count">409</strong><small>2022 listesi</small></div><div class="metric"><span>DOĞRULANMIŞ AĞIRLIK</span><strong id="basket-weight">—</strong><small>Ağırlık kaynağı gerekli</small></div><div class="metric"><span>ENDEKS DURUMU</span><strong id="basket-status">—</strong><small>Eksik veri varsa kilitli</small></div></div>
         <div id="basket-notice" class="notice">2022 ağırlıkları resmî kaynakla doğrulanmadan endeks üretilmez.</div>
       </section>
